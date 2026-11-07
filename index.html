@@ -3,10 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Fretes e mudanças em São Gonçalo, Niterói e Maricá. Calcule o valor da sua mudança em 1 minuto.">
+<meta name="description" content="Fretes e mudanças em São Gonçalo, Niterói e Maricá. Monte sua mudança e receba o orçamento no WhatsApp.">
 <title>Pita Fretes e Mudanças</title>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
 /* Layout: página escura de coluna única. Cabeçalho preto com tarja vermelha corrida,
    hero com vídeo de depoimento, e a calculadora como bloco central tipo ordem de serviço. */
@@ -220,6 +221,88 @@ footer.pe a:hover{text-decoration:underline}
 .zap-flut{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:40;background:var(--st-concluido);color:#07140F;border-radius:999px;padding:13px 18px;font-weight:700;font-size:14.5px;text-decoration:none;box-shadow:0 8px 24px rgba(0,0,0,.5);display:inline-flex;align-items:center;gap:8px}
 .oculto{display:none!important}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------- endereços e rota ---------- */
+.end{border:1px solid var(--line);border-radius:var(--radius-md);padding:6px 14px 14px;margin:0;min-width:0;background:var(--bg)}
+.end legend{display:flex;align-items:center;gap:8px;font-weight:800;font-size:15px;padding:0 6px;color:var(--ink)}
+.end legend i{width:12px;height:12px;border-radius:50%;background:var(--cor);box-shadow:0 0 0 3px color-mix(in srgb,var(--cor) 25%,transparent)}
+.end-g{display:grid;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.end-g .c-cep,.end-g .c-rua,.end-g .c-bai,.end-g .c-cid{grid-column:span 2}
+@media(min-width:720px){
+  .end-g{grid-template-columns:repeat(6,minmax(0,1fr))}
+  .end-g .c-cep{grid-column:span 2}.end-g .c-rua{grid-column:span 4}
+  .end-g .c-num{grid-column:span 1}.end-g .c-compl{grid-column:span 1}
+  .end-g .c-bai{grid-column:span 2}.end-g .c-cid{grid-column:span 2}
+}
+.opt{font-weight:500;font-size:12px;color:var(--ink-muted)}
+.end-msg{font-size:13px;color:var(--ink-muted);margin-top:10px;min-height:1px}
+.end-msg:empty{display:none}
+.end-msg.ok{color:var(--st-concluido)}
+.end-msg.alerta{color:var(--st-andamento)}
+.mapa-rota{height:340px;margin-top:18px;border:1px solid var(--line);border-radius:var(--radius-md);background:#101014;overflow:hidden;position:relative;z-index:0;max-width:100%}
+@media(min-width:720px){.mapa-rota{height:430px}}
+.leaflet-container{font-family:var(--font-sans);background:#101014}
+.leaflet-control-attribution{font-size:10px}
+.pinw{position:relative;width:22px;height:22px}
+.pin{position:absolute;inset:0;border-radius:50% 50% 50% 0;background:var(--c);transform:rotate(-45deg);border:2px solid #0B0B0C;box-shadow:0 3px 8px rgba(0,0,0,.6)}
+.pinw b{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);white-space:nowrap;background:var(--c);color:#0B0B0C;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;box-shadow:0 2px 6px rgba(0,0,0,.5)}
+.rota-info{display:grid;gap:12px;margin-top:14px}
+.rota-info:empty{display:none}
+.rota-km{display:flex;flex-wrap:wrap;gap:8px 20px;font-size:15px}
+.rota-km b{font-size:17px}
+.chk.confirma{border-width:2px}
+.dica{font-size:13px;color:var(--ink-muted);line-height:1.5}
+.carregando::before{content:"";display:inline-block;width:12px;height:12px;margin-right:8px;vertical-align:-1px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:gira .8s linear infinite}
+@keyframes gira{to{transform:rotate(360deg)}}
+.sub-perg{font-size:14px;font-weight:700;margin:16px 0 10px}
+input[type=number]{width:100%;font:inherit;font-size:15.5px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:var(--radius-sm);padding:12px 13px;min-height:48px}
+.opc[disabled]{opacity:.4;cursor:not-allowed}
+.opc[disabled]:hover{border-color:var(--line)}
+
+/* ---------- agenda ---------- */
+.agenda{margin-top:18px;border:1px solid var(--line);border-radius:var(--radius-lg);background:var(--bg);padding:16px}
+@media(min-width:720px){.agenda{padding:22px}}
+.ag-cab{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.ag-cab h3{font-size:clamp(19px,2.8vw,24px);text-align:center}
+.ag-nav{width:46px;height:46px;flex:0 0 auto;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--ink);font-size:24px;line-height:1;cursor:pointer}
+.ag-nav:hover:not([disabled]){border-color:var(--accent);color:var(--accent)}
+.ag-nav[disabled]{opacity:.3;cursor:not-allowed}
+.ag-grade{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+@media(min-width:560px){.ag-grade{gap:8px}}
+.ag-sem{font-size:11.5px;font-weight:700;text-align:center;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.06em;padding-bottom:2px}
+.ag-dia{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;min-height:54px;border:1.5px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);font:inherit;cursor:pointer;padding:8px 2px;min-width:0}
+@media(min-width:720px){.ag-dia{min-height:76px}}
+.ag-dia .n{font-weight:800;font-size:clamp(15px,2.2vw,20px);line-height:1;font-variant-numeric:tabular-nums}
+.ag-dia .tr{display:flex;gap:3px;width:68%;max-width:44px}
+.ag-dia .tr i{flex:1;height:5px;border-radius:3px;background:var(--st-concluido)}
+.ag-dia .tr i.oc{background:var(--st-cancelado)}
+.ag-dia:hover:not([disabled]){border-color:var(--accent-strong)}
+.ag-dia[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:0 0 0 2px var(--accent)}
+.ag-dia.hoje .n{color:var(--accent)}
+.ag-dia[disabled]{cursor:not-allowed;background:transparent;border-color:transparent;color:var(--ink-muted);opacity:.55}
+.ag-dia.cheio{opacity:1;background:color-mix(in srgb,var(--st-cancelado) 10%,transparent);border-color:color-mix(in srgb,var(--st-cancelado) 30%,transparent)}
+.ag-leg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--ink-muted);margin-top:14px}
+.ag-leg i{display:inline-block;width:16px;height:5px;border-radius:3px;background:var(--st-concluido);margin-right:7px;vertical-align:2px}
+.ag-leg i.oc{background:var(--st-cancelado)}
+.opc.turno{padding:18px 16px}
+.opc.turno b{font-size:17px}
+
+/* ---------- envio ---------- */
+.resumo-env{display:grid;border:1px solid var(--line);border-radius:var(--radius-md);overflow:hidden}
+.resumo-env div{display:grid;grid-template-columns:90px minmax(0,1fr);gap:12px;padding:11px 14px;font-size:14px;background:var(--panel)}
+.resumo-env div:nth-child(odd){background:var(--bg)}
+.resumo-env span{color:var(--ink-muted);font-weight:600}
+.resumo-env b{font-weight:700;min-width:0;overflow-wrap:anywhere}
+.btn-grande{width:100%;min-height:58px;font-size:16px;white-space:normal;text-align:center;line-height:1.3;padding:14px 22px;box-shadow:0 8px 22px rgba(52,209,160,.25)}
+.erro-form{color:var(--accent-strong);font-size:14px;font-weight:600;margin-top:12px}
+.erro-form:empty{display:none}
+.enviado{text-align:center;padding-block:10px}
+.enviado .ok-ic{width:64px;height:64px;margin:0 auto 16px;border-radius:50%;background:var(--st-concluido);color:#07140F;display:grid;place-items:center;font-size:32px;font-weight:800}
+.enviado-bt{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:20px}
+
+.chk{text-align:left}
+.zap-flut{transition:opacity .2s,transform .2s}
+.zap-flut.escondido{opacity:0;transform:translateY(12px);pointer-events:none}
 </style>
 </head>
 <body style="margin:0">
@@ -231,7 +314,7 @@ footer.pe a:hover{text-decoration:underline}
       <span class="logo-tx">PITA<small>Fretes e Mudanças</small></span>
     </a>
     <nav class="nav">
-      <a href="#orcamento">Calcular mudança</a>
+      <a href="#orcamento">Orçamento</a>
       <a href="#servicos">Serviços</a>
       <a href="#area">Onde atendemos</a>
       <a href="#duvidas">Dúvidas</a>
@@ -246,10 +329,10 @@ footer.pe a:hover{text-decoration:underline}
     <div class="wrap hero-in">
       <div>
         <span class="rotulo">São Gonçalo · Niterói · Maricá</span>
-        <h1 style="margin-top:14px">Descubra quanto custa a sua mudança <em>em 1 minuto</em>, sem ligação.</h1>
-        <p class="hero-sub">Monte a lista dos seus móveis, diga de onde para onde, e o valor aparece na hora. Caminhão próprio, equipe uniformizada e montagem dos móveis no destino.</p>
+        <h1 style="margin-top:14px">Receba o orçamento da sua mudança <em>no WhatsApp</em>, sem ligação.</h1>
+        <p class="hero-sub">Monte a lista dos seus móveis, diga de onde para onde, escolha o dia na agenda e envie tudo pelo WhatsApp. A gente responde com o orçamento, com e sem ajudante.</p>
         <div class="hero-cta">
-          <a class="btn btn-pri" href="#orcamento">Calcular minha mudança</a>
+          <a class="btn btn-pri" href="#orcamento">Montar minha mudança</a>
           <a class="btn btn-fan" id="zapHero" href="#orcamento">Tirar uma dúvida rápida</a>
         </div>
         <div class="selos">
@@ -269,9 +352,9 @@ footer.pe a:hover{text-decoration:underline}
   <section class="secao" id="orcamento">
     <div class="wrap">
       <div class="cab">
-        <span class="rotulo">Calculadora de mudança</span>
+        <span class="rotulo">Formulário de orçamento</span>
         <h2>Monte a sua mudança</h2>
-        <p>São 7 perguntas rápidas. Nenhum dado de contato é pedido antes de você ver o valor.</p>
+        <p>São 7 perguntas rápidas. No fim, você envia o formulário pelo WhatsApp e recebe o orçamento.</p>
       </div>
       <div class="calc">
         <div class="calc-topo">
@@ -291,8 +374,8 @@ footer.pe a:hover{text-decoration:underline}
       <div class="cab"><span class="rotulo">Como funciona</span><h2>Da lista de móveis até o caminhão na porta</h2></div>
       <div class="grade c4">
         <div class="card passo-n"><div class="n">1</div><h3>Você monta a lista</h3><p>Marca os móveis cômodo por cômodo. O sistema calcula o volume em m³ e quantas viagens o Bongo precisa fazer.</p></div>
-        <div class="card passo-n"><div class="n">2</div><h3>Recebe o valor na hora</h3><p>Preço a partir de, já considerando distância, andar, escada e os serviços extras que escolher.</p></div>
-        <div class="card passo-n"><div class="n">3</div><h3>Confirmamos a data</h3><p>Falamos no WhatsApp para fechar horário e, em mudanças grandes, agendar uma vistoria gratuita.</p></div>
+        <div class="card passo-n"><div class="n">2</div><h3>Envia pelo WhatsApp</h3><p>O formulário chega completo para a equipe, com endereços, rota, acesso e itens. Respondemos com o valor com e sem ajudante.</p></div>
+        <div class="card passo-n"><div class="n">3</div><h3>Confirmamos a data</h3><p>Você escolhe o dia e o turno na agenda. A vaga fica garantida quando confirmamos com você no WhatsApp.</p></div>
         <div class="card passo-n"><div class="n">4</div><h3>Mudança feita e só então você paga</h3><p>Equipe carrega, transporta e monta os móveis no destino. O pagamento é feito depois do serviço concluído.</p></div>
       </div>
     </div>
@@ -337,22 +420,22 @@ footer.pe a:hover{text-decoration:underline}
   <section class="secao" id="duvidas" style="background:var(--panel);border-block:1px solid var(--line)">
     <div class="wrap" style="max-width:860px">
       <div class="cab"><span class="rotulo">Dúvidas frequentes</span><h2>Perguntas que todo mundo faz</h2></div>
-      <details class="faq" open><summary>Precisa de entrada ou sinal?<span class="seta">+</span></summary><p>Não. O pagamento é feito somente após o serviço concluído, com a mudança já entregue no endereço novo. Aceitamos Pix, dinheiro e cartão.</p></details>
-      <details class="faq"><summary>Qual o tamanho do caminhão?<span class="seta">+</span></summary><p>Trabalhamos com um Kia Bongo K2500. A carroceria tem 2,80 m de comprimento por 1,60 m de largura, com laterais de 15 cm. A calculadora soma o volume dos seus móveis e avisa na hora se a mudança precisa de mais de uma viagem.</p></details>
+      <details class="faq" open><summary>Precisa de entrada ou sinal?<span class="seta">+</span></summary><p>Não. O pagamento é feito somente após o serviço concluído, com a mudança já entregue no endereço novo. Aceitamos Pix, dinheiro e cartão. Como não cobramos reserva, a data só fica garantida depois que confirmamos com você.</p></details>
+      <details class="faq"><summary>Qual o tamanho do caminhão?<span class="seta">+</span></summary><p>Trabalhamos com um Kia Bongo K2500. A carroceria tem 2,80 m de comprimento por 1,60 m de largura, com laterais de 15 cm. O formulário soma o volume dos seus móveis e avisa na hora se a mudança precisa de mais de uma viagem.</p></details>
       <details class="faq"><summary>Vocês embalam os móveis?<span class="seta">+</span></summary><p>Não oferecemos serviço de embalagem sob medida. Os móveis seguem protegidos e amarrados na carroceria, mas caixas, louças e itens frágeis precisam vir embalados por você.</p></details>
       <details class="faq"><summary>Dá para mudar em fim de semana ou feriado?<span class="seta">+</span></summary><p>Dá. Trabalhamos de domingo a domingo, inclusive feriados, e não cobramos acréscimo por causa do dia da semana.</p></details>
-      <details class="faq"><summary>O valor do site é o valor final?<span class="seta">+</span></summary><p>É uma estimativa a partir de, calculada pelo volume dos móveis que você marcou e pelas condições de acesso. O valor fechado sai depois da confirmação do endereço e, em mudanças grandes, de uma vistoria rápida e gratuita.</p></details>
-      <details class="faq"><summary>E se o móvel não passar pela escada ou pelo elevador?<span class="seta">+</span></summary><p>Fazemos içamento pela janela ou sacada com equipe especializada. A calculadora já sugere esse serviço quando você informa andar alto sem elevador de serviço.</p></details>
+      <details class="faq"><summary>Como recebo o valor?<span class="seta">+</span></summary><p>Você preenche o formulário no site e envia pelo WhatsApp. A equipe responde com o orçamento, com e sem ajudante. Em mudanças grandes, fazemos antes uma vistoria rápida e gratuita.</p></details>
+      <details class="faq"><summary>E se o móvel não passar pela escada ou pelo elevador?<span class="seta">+</span></summary><p>Fazemos içamento pela janela ou sacada com equipe especializada. O formulário já sugere esse serviço quando você informa andar alto sem elevador de serviço.</p></details>
       <details class="faq"><summary>Vocês atendem o Rio de Janeiro ou outros estados?<span class="seta">+</span></summary><p>No momento não. Estamos temporariamente sem atender cidades do Rio de Janeiro e não fazemos mudanças interestaduais. Atendemos São Gonçalo, Niterói e Maricá.</p></details>
     </div>
   </section>
 
   <section class="secao fim">
     <div class="wrap" style="text-align:center">
-      <h2>Ainda não calculou a sua?</h2>
-      <p>Leva um minuto e você não precisa falar com ninguém para ver o preço.</p>
+      <h2>Ainda não pediu o seu orçamento?</h2>
+      <p>Leva poucos minutos e o orçamento chega no seu WhatsApp.</p>
       <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:24px">
-        <a class="btn btn-pri" href="#orcamento">Calcular minha mudança</a>
+        <a class="btn btn-pri" href="#orcamento">Montar minha mudança</a>
         <a class="btn btn-zap" id="zapFim" href="#orcamento">Chamar no WhatsApp</a>
       </div>
     </div>
@@ -370,6 +453,7 @@ footer.pe a:hover{text-decoration:underline}
 
 <a class="zap-flut" id="zapFlut" href="#orcamento" aria-label="Falar no WhatsApp">💬 WhatsApp</a>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 /* =========================================================================
    CONFIGURAÇÃO — altere apenas este bloco
@@ -393,7 +477,18 @@ const CONFIG = {
   },
   agenda: {
     aberta: "AGENDA ABERTA PARA ESTA SEMANA · chame agora e garanta o seu dia",
-    ultimas: "ÚLTIMAS VAGAS DA SEMANA · a agenda está fechando, corra para garantir"
+    ultimas: "ÚLTIMAS VAGAS DA SEMANA · a agenda está fechando, corra para garantir",
+    // Endereço (URL) de onde o site lê os serviços CONFIRMADOS da Central de Fretes.
+    // Aceita JSON [{"data":"2026-11-12","turno":"manha","status":"confirmado"}] ou CSV data,turno,status.
+    // turno: "manha", "tarde" ou "dia" (dia inteiro). Vazio = usa só a lista "confirmados" abaixo.
+    fonte: "",
+    confirmados: [            // lista manual, enquanto a integração não está ligada. Ex.: {data:"2026-11-12", turno:"manha"}
+    ],
+    turnos: [
+      { id:"manha", nome:"Manhã", hora:"A partir das 8h", emj:"🌅" },
+      { id:"tarde", nome:"Tarde", hora:"A partir das 13h", emj:"🌇" }
+    ],
+    diasAFrente: 90           // até quantos dias à frente o cliente pode escolher
   },
   precos: {
     pisoMinimo: 280,
@@ -408,7 +503,7 @@ const CONFIG = {
     andarSemElevador: 55,     // por andar, por ponto (máx. 8 andares cobrados)
     soElevadorSocial: 90,
     ruaDificil: 190,
-    montagem: 180,
+    montagem: 220,            // desmontagem e montagem, a partir de
     icamento: 780,
     fatorFimDeSemana: 1,      // trabalhamos dom a dom, sem acréscimo
     fatorUrgencia: 1,
@@ -543,27 +638,52 @@ const COMODOS = [
 ];
 const PRESETS = {
   kitnet:{camasolt:1,gr3:1,geladeira:1,fogao:1,sofa2:1,tv:1,mesa4:1,cadeira:2,lavar:1,caixas:8,malas:2},
-  um:{camacasal:1,gr3:1,comoda:1,geladeira:1,fogao:1,sofa3:1,rack:1,tv:1,mesa4:1,cadeira:4,lavar:1,caixas:12,malas:3},
-  dois:{camacasal:1,camasolt:1,gr3:1,gr6:1,comoda:2,geladeira:1,fogao:1,sofa3:1,rack:1,tv:2,estante:1,mesa4:1,cadeira:4,lavar:1,armariocz:1,caixas:18,malas:5,ar:1},
-  tres:{camacasal:1,camasolt:2,gr6:2,gr3:1,comoda:3,escrivaninha:1,geladeira:1,duplex:1,fogao:1,sofaret:1,rack:1,tv:3,estante:1,mesa6:1,cadeira:6,lavar:1,armariocz:1,micro:1,caixas:26,malas:7,ar:2},
-  casa:{camacasal:2,camasolt:2,gr6:2,gr3:2,comoda:4,escrivaninha:1,penteadeira:1,geladeira:1,duplex:1,fogao:1,sofaret:1,sofa2:1,rack:1,tv:4,estante:2,mesa6:1,cadeira:8,lavar:1,secadora:1,armariocz:2,armarioarea:1,micro:1,caixas:36,malas:10,ar:3,bike:1}
+  casa1:{camacasal:1,gr3:1,comoda:1,geladeira:1,fogao:1,sofa3:1,rack:1,tv:1,mesa4:1,cadeira:4,lavar:1,armarioarea:1,plantas:2,bike:1,caixas:14,malas:3},
+  casa2:{camacasal:1,camasolt:1,gr3:1,gr6:1,comoda:2,geladeira:1,fogao:1,sofa3:1,rack:1,tv:2,estante:1,mesa4:1,cadeira:4,lavar:1,armariocz:1,armarioarea:1,plantas:3,bike:1,caixas:20,malas:5,ar:1},
+  apto1:{camacasal:1,gr3:1,comoda:1,geladeira:1,fogao:1,sofa3:1,rack:1,tv:1,mesa4:1,cadeira:4,lavar:1,caixas:12,malas:3},
+  apto2:{camacasal:1,camasolt:1,gr3:1,gr6:1,comoda:2,geladeira:1,fogao:1,sofa3:1,rack:1,tv:2,estante:1,mesa4:1,cadeira:4,lavar:1,armariocz:1,caixas:18,malas:5,ar:1},
+  apto2v:{camacasal:1,camasolt:1,gr3:1,gr6:1,comoda:2,geladeira:1,fogao:1,sofa3:1,rack:1,tv:2,estante:1,mesa4:1,cadeira:6,poltrona:2,mesacentro:1,plantas:5,lavar:1,armariocz:1,caixas:18,malas:5,ar:1}
 };
+const PORTES = [
+  ["kitnet","🚪","Kitnet"],
+  ["casa1","🏠","Casa com 1 quarto"],
+  ["casa2","🏡","Casa com 2 quartos"],
+  ["apto1","🏢","Apartamento com 1 quarto"],
+  ["apto2","🏢","Apartamento com 2 quartos"],
+  ["apto2v","🌿","Apartamento com 2 quartos e varanda"]
+];
 
 /* ========================================================================= */
 const ETAPAS = ["servico","trajeto","acesso","itens","extras","data","contato"];
-const NOMES = {servico:"Tipo de serviço",trajeto:"De onde para onde",acesso:"Acesso nos dois endereços",itens:"O que vai ser transportado",extras:"Serviços extras",data:"Data da mudança",contato:"Seus dados"};
+const NOMES = {servico:"Tipo de serviço",trajeto:"Endereços e rota",acesso:"Acesso nos dois endereços",itens:"O que vai ser transportado",extras:"Ajudantes e serviços extras",data:"Data e turno",contato:"Enviar para o WhatsApp"};
 
-let E = {
+const endVazio = () => ({cep:"",rua:"",num:"",compl:"",bairro:"",cidade:"",lat:null,lon:null,nivel:null});
+const NOVO = () => ({
   etapa:0, servico:"", porte:"",
-  origemCidade:"", origemBairro:"", destinoCidade:"", destinoBairro:"",
-  oTipo:"", oAndar:0, oElevador:"", dTipo:"", dAndar:0, dElevador:"", ruaDificil:false,
-  itens:{}, ajudantes:0, extras:[], quando:"", dataEsc:"", nome:"", tel:"", email:"", querEmail:false,
-  obs:"", visto:false
-};
-try{ const s=localStorage.getItem("pita_orcamento"); if(s){ E=Object.assign(E,JSON.parse(s)); E.etapa=Math.min(E.etapa,ETAPAS.length-1);} }catch(e){}
-function salvar(){ try{ localStorage.setItem("pita_orcamento",JSON.stringify(E)); }catch(e){} }
+  o:endVazio(), d:endVazio(), rota:null, endOk:false,
+  oTipo:"", oAndar:0, oElevador:"", oDegraus:"", oCabe:"", oEscadaItens:"",
+  dTipo:"", dAndar:0, dElevador:"", dDegraus:"", dCabe:"", dEscadaItens:"",
+  ruaDificil:false,
+  itens:{}, ajudantes:null, extras:[],
+  semData:false, dataEsc:"", turno:"",
+  nome:"", tel:"", email:"", querEmail:false, obs:"", enviado:false
+});
+let E = NOVO();
+try{
+  const s=localStorage.getItem("pita_orcamento_v2");
+  if(s){ const x=JSON.parse(s); E=Object.assign(NOVO(),x); E.o=Object.assign(endVazio(),x.o||{}); E.d=Object.assign(endVazio(),x.d||{});
+    E.etapa=Math.min(E.etapa||0,ETAPAS.length-1); }
+}catch(e){}
+function salvar(){ try{ localStorage.setItem("pita_orcamento_v2",JSON.stringify(E)); }catch(e){} }
 
 const brl = n => "R$ " + Math.round(n).toLocaleString("pt-BR");
+const esc = s => String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const enc = encodeURIComponent;
+const espera = ms => new Promise(r=>setTimeout(r,ms));
+const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const hojeISO = iso(new Date());
+const dataBR = s => s ? s.split("-").reverse().join("/") : "";
+const diaSemana = s => { const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d).toLocaleDateString("pt-BR",{weekday:"long"}); };
 const el = document.getElementById("calcCorpo");
 const itemPorId = {};
 COMODOS.forEach(c=>c.itens.forEach(i=>itemPorId[i.id]=Object.assign({comodo:c.nome},i)));
@@ -594,19 +714,20 @@ function montaVideo(){
   } else {
     t.innerHTML = '<div class="vazio"><div class="play" aria-hidden="true">▶</div>'+
       '<div><strong style="color:#fff;font-size:15px">Espaço do depoimento em vídeo</strong><br>'+
-      'Grave a cliente contando como foi a mudança e aponte o arquivo em <code>CONFIG.video.src</code>.</div></div>';
+      'Em breve, uma cliente contando como foi a mudança.</div></div>';
   }
 }
 
-/* ---------------- cálculo ---------------- */
+/* ---------------- cálculo interno (não aparece para o cliente) ---------------- */
 function volumeTotal(){
   let v=0; for(const id in E.itens){ const q=E.itens[id]||0; if(itemPorId[id]) v+=itemPorId[id].m3*q; }
   return v;
 }
 function faixaDistancia(){
-  if(!E.origemCidade || !E.destinoCidade) return "cidade";
-  if(E.origemCidade === E.destinoCidade) return (E.origemBairro && E.origemBairro===E.destinoBairro) ? "bairro" : "cidade";
-  const par = [E.origemCidade,E.destinoCidade].sort().join("|");
+  if(E.rota){ const k=E.rota.km; return k<4?"bairro":k<12?"cidade":k<25?"vizinha":"longe"; }
+  if(!E.o.cidade || !E.d.cidade) return "cidade";
+  if(E.o.cidade===E.d.cidade) return "cidade";
+  const par=[E.o.cidade,E.d.cidade].sort().join("|");
   return par.indexOf("Maricá")>-1 && par.indexOf("Niterói")>-1 ? "longe" : "vizinha";
 }
 function sugereAjudantes(vol){
@@ -614,38 +735,23 @@ function sugereAjudantes(vol){
 }
 function calcular(){
   const P=CONFIG.precos, C=CONFIG.caminhao, vol=volumeTotal();
-  const viagens = Math.max(1, Math.ceil(vol / C.m3PorViagem));
-  const ajudantes = E.ajudantes || sugereAjudantes(vol);
-  const linhas=[];
-  linhas.push({rot:"Viagem com "+C.nome, val:P.viagemBase});
-  if(viagens>1) linhas.push({rot:(viagens-1)+(viagens-1>1?" viagens extras":" viagem extra"), val:(viagens-1)*P.viagemExtra});
-  linhas.push({rot:"Equipe de carga e descarga ("+ajudantes+(ajudantes>1?" ajudantes)":" ajudante)"), val:ajudantes*P.ajudanteDia});
-
-  const fx = faixaDistancia(), dist = P.distancia[fx] ?? 0;
-  if(dist>0) linhas.push({rot:"Deslocamento", val:dist*viagens});
-
-  let escada=0;
-  if(E.oTipo==="apto" && E.oAndar>0 && E.oElevador==="nao") escada += Math.min(E.oAndar,8)*P.andarSemElevador;
-  if(E.dTipo==="apto" && E.dAndar>0 && E.dElevador==="nao") escada += Math.min(E.dAndar,8)*P.andarSemElevador;
-  if(escada>0) linhas.push({rot:"Escada sem elevador", val:escada});
-
-  let social=0;
-  if(E.oElevador==="social") social+=P.soElevadorSocial;
-  if(E.dElevador==="social") social+=P.soElevadorSocial;
-  if(social>0) linhas.push({rot:"Elevador social com restrição", val:social});
-
-  if(E.ruaDificil) linhas.push({rot:"Acesso difícil para o caminhão", val:P.ruaDificil});
-  if(E.extras.includes("montagem")) linhas.push({rot:"Desmontagem e montagem", val:P.montagem});
-  if(E.extras.includes("icamento")) linhas.push({rot:"Içamento (a partir de)", val:P.icamento});
-
-  let total = linhas.reduce((s,l)=>s+l.val,0);
-  total = Math.max(total, P.pisoMinimo);
-  const minimo = Math.max(P.pisoMinimo, Math.floor(total*P.margemMinimo/10)*10);
-  const teto = Math.ceil(total*P.margemTeto/10)*10;
-  return {vol, viagens, ajudantes, linhas, total, minimo, teto};
+  const viagens=Math.max(1,Math.ceil(vol/C.m3PorViagem));
+  const ajudantes=E.ajudantes??sugereAjudantes(vol);
+  let total=P.viagemBase+(viagens-1)*P.viagemExtra+ajudantes*P.ajudanteDia;
+  total+=(P.distancia[faixaDistancia()]??0)*viagens;
+  ["o","d"].forEach(p=>{
+    if(E[p+"Tipo"]==="apto"&&E[p+"Andar"]>0&&E[p+"Elevador"]==="nao") total+=Math.min(E[p+"Andar"],8)*P.andarSemElevador;
+    if(E[p+"Tipo"]==="sobrado") total+=Math.min(8,Math.ceil((+E[p+"Degraus"]||0)/16))*P.andarSemElevador;
+    if(E[p+"Elevador"]==="social") total+=P.soElevadorSocial;
+  });
+  if(E.ruaDificil) total+=P.ruaDificil;
+  if(E.extras.includes("montagem")) total+=P.montagem;
+  if(E.extras.includes("icamento")) total+=P.icamento;
+  total=Math.max(total,P.pisoMinimo);
+  return {vol,viagens,ajudantes,total,minimo:Math.max(P.pisoMinimo,Math.floor(total*P.margemMinimo/10)*10)};
 }
 
-/* ---------------- helpers ---------------- */
+/* ---------------- helpers de tela ---------------- */
 function opc(valor,campo,emj,titulo,sub){
   const on = E[campo]===valor;
   return `<button type="button" class="opc" aria-pressed="${on}" data-campo="${campo}" data-valor="${valor}">
@@ -657,117 +763,273 @@ function chk(valor,emj,titulo,sub,preco){
     <span class="bx">✓</span><div style="min-width:0"><b>${emj} ${titulo}</b><small>${sub}</small></div>
     <span class="pr">${preco}</span></button>`;
 }
-function navRodape(podeAvancar,textoAvancar,podePular){
+function navRodape(textoAvancar){
   return `<div class="rodape-calc">
     ${E.etapa>0?`<button type="button" class="btn btn-fan" data-nav="-1">Voltar</button>`:""}
-    <div class="dir">
-      ${podePular?`<button type="button" class="linkpular" data-nav="pular">Pular esta etapa</button>`:""}
-      <button type="button" class="btn btn-pri" data-nav="1" ${podeAvancar?"":"disabled"}>${textoAvancar||"Continuar"}</button>
-    </div></div>`;
-}
-function selectBairro(idSel,cidade,valor){
-  if(!cidade) return `<select id="${idSel}" disabled><option>Escolha a cidade primeiro</option></select>`;
-  const ops = LISTA[cidade].map(b=>`<option value="${b.nome}" ${valor===b.nome?"selected":""}>${b.nome}</option>`).join("");
-  return `<select id="${idSel}"><option value="">Selecione o bairro…</option>${ops}</select>`;
-}
-
-/* ---------------- mapa ---------------- */
-function pinoSVG(cor,rotulo){
-  return `<g class="pino" transform="translate(-100,-100)" opacity="0">
-    <path d="M0,0 C-9,-12 -13,-17 -13,-23 A13,13 0 1 1 13,-23 C13,-17 9,-12 0,0 Z" fill="${cor}" stroke="rgba(0,0,0,.45)" stroke-width="1"/>
-    <circle cx="0" cy="-23" r="5" fill="#0B0B0C"/>
-    <text x="0" y="14" text-anchor="middle" font-size="11" font-weight="700" fill="${cor}">${rotulo}</text></g>`;
-}
-function mapaHTML(){
-  return `<div class="mapa">
-    <svg viewBox="0 0 640 360" role="img" aria-label="Esboço do mapa de São Gonçalo, Niterói e Maricá com a origem e o destino marcados">
-      <rect x="0" y="0" width="640" height="360" fill="#101014"/>
-      <polygon points="0,30 150,62 158,196 136,306 0,344" fill="#13232E" stroke="#1C3444"/>
-      <polygon points="0,338 206,330 276,300 420,314 640,318 640,360 0,360" fill="#13232E" stroke="#1C3444"/>
-      <text x="62" y="170" font-size="11" fill="#5A7A8C" font-weight="700">BAÍA DE</text>
-      <text x="56" y="184" font-size="11" fill="#5A7A8C" font-weight="700">GUANABARA</text>
-      <text x="500" y="348" font-size="11" fill="#5A7A8C" font-weight="700">OCEANO ATLÂNTICO</text>
-      <polygon id="shSG" class="cidade-sh" points="152,66 332,44 402,110 372,212 250,228 160,196" fill="#1E1E23" stroke="#33333A" stroke-width="1.5"/>
-      <polygon id="shNI" class="cidade-sh" points="152,200 250,216 278,300 206,330 140,300" fill="#1E1E23" stroke="#33333A" stroke-width="1.5"/>
-      <polygon id="shMA" class="cidade-sh" points="386,168 622,182 622,318 422,314 380,250" fill="#1E1E23" stroke="#33333A" stroke-width="1.5"/>
-      <text x="250" y="130" text-anchor="middle" font-size="13" font-weight="800" fill="#6E6E78">SÃO GONÇALO</text>
-      <text x="196" y="268" text-anchor="middle" font-size="12" font-weight="800" fill="#6E6E78">NITERÓI</text>
-      <text x="500" y="244" text-anchor="middle" font-size="13" font-weight="800" fill="#6E6E78">MARICÁ</text>
-      <line id="rota" x1="0" y1="0" x2="0" y2="0" stroke="#FF2A32" stroke-width="2" stroke-dasharray="6 6" opacity="0"/>
-      <g id="pinO">${pinoSVG("#FF2A32","ORIGEM")}</g>
-      <g id="pinD">${pinoSVG("#34D1A0","DESTINO")}</g>
-    </svg>
-    <div class="mapa-leg">
-      <span><i style="background:#FF2A32"></i>Origem: <strong id="legO" style="color:var(--ink)">—</strong></span>
-      <span><i style="background:#34D1A0"></i>Destino: <strong id="legD" style="color:var(--ink)">—</strong></span>
-    </div>
-    <p style="font-size:12px;color:var(--ink-muted);margin-top:8px">Esboço ilustrativo: o pino marca a região do bairro, não o endereço exato.</p>
+    <div class="dir"><button type="button" class="btn btn-pri" data-nav="1" ${pode(ETAPAS[E.etapa])?"":"disabled"}>${textoAvancar||"Continuar"}</button></div>
   </div>`;
 }
-function atualizaMapa(){
-  const o = achaBairro(E.origemCidade,E.origemBairro);
-  const d = achaBairro(E.destinoCidade,E.destinoBairro);
-  const po = document.querySelector("#pinO .pino"), pd = document.querySelector("#pinD .pino");
-  const rota = document.getElementById("rota");
-  if(!po) return;
-  if(o){ po.setAttribute("transform",`translate(${o.x},${o.y})`); po.setAttribute("opacity","1"); }
-  else { po.setAttribute("opacity","0"); }
-  if(d){ pd.setAttribute("transform",`translate(${d.x},${d.y})`); pd.setAttribute("opacity","1"); }
-  else { pd.setAttribute("opacity","0"); }
-  if(o && d && !(o.x===d.x && o.y===d.y)){
-    rota.setAttribute("x1",o.x); rota.setAttribute("y1",o.y-10);
-    rota.setAttribute("x2",d.x); rota.setAttribute("y2",d.y-10);
-    rota.setAttribute("opacity","0.8");
-  } else rota.setAttribute("opacity","0");
-  const legO=document.getElementById("legO"), legD=document.getElementById("legD");
-  if(legO) legO.textContent = o ? `${o.nome} — ${o.zona}` : "—";
-  if(legD) legD.textContent = d ? `${d.nome} — ${d.zona}` : "—";
-  ["São Gonçalo|shSG","Niterói|shNI","Maricá|shMA"].forEach(p=>{
-    const [cid,id]=p.split("|"); const sh=document.getElementById(id);
-    const ativo = E.origemCidade===cid || E.destinoCidade===cid;
-    sh.setAttribute("fill", ativo ? "#2A1416" : "#1E1E23");
-    sh.setAttribute("stroke", ativo ? "#FF2A32" : "#33333A");
-  });
+function atualizaAvancar(){
+  const av=el.querySelector('[data-nav="1"]'); if(av) av.disabled=!pode(ETAPAS[E.etapa]);
+}
+const endCompleto = a => !!(a.rua.trim()&&a.num.trim()&&a.bairro.trim()&&a.cidade);
+function okAcesso(p){
+  const t=E[p+"Tipo"]; if(!t) return false;
+  if(t==="sobrado") return (+E[p+"Degraus"]||0)>0;
+  if(t==="apto"&&E[p+"Andar"]>0){
+    if(!E[p+"Elevador"]) return false;
+    if(E[p+"Elevador"]!=="nao"){
+      if(!E[p+"Cabe"]) return false;
+      if(E[p+"Cabe"]==="nao"&&!E[p+"EscadaItens"].trim()) return false;
+    }
+  }
+  return true;
+}
+function pode(nome){
+  switch(nome){
+    case "servico": return !!E.servico;
+    case "trajeto": return endCompleto(E.o)&&endCompleto(E.d)&&!!E.rota&&E.endOk;
+    case "acesso":  return okAcesso("o")&&okAcesso("d");
+    case "itens":   return Object.values(E.itens).some(q=>q>0);
+    case "extras":  return E.ajudantes!==null&&E.ajudantes!==undefined;
+    case "data":    return E.semData||(!!E.dataEsc&&!!E.turno&&turnoLivre(E.dataEsc,E.turno));
+    default: return true;
+  }
 }
 
-/* ---------------- etapas ---------------- */
+/* ---------------- 1. serviço ---------------- */
 function telaServico(){
   return `<h2>Que tipo de serviço você precisa?</h2>
-  <p class="ajuda">Escolha uma opção para o cálculo considerar a equipe e o número de viagens certo.</p>
+  <p class="ajuda">Escolha uma opção para a gente montar a equipe e o número de viagens certo.</p>
   <div class="opcoes g2">
     ${opc("residencial","servico","🏠","Mudança residencial","Casa, apartamento ou kitnet")}
     ${opc("comercial","servico","🏢","Mudança comercial","Escritório, loja ou consultório")}
     ${opc("frete","servico","📦","Frete ou carreto","Poucos volumes ou uma entrega")}
     ${opc("icamento","servico","🏗️","Içamento","Móvel que sobe pela janela")}
-  </div>${navRodape(!!E.servico)}`;
+  </div>${navRodape()}`;
+}
+
+/* ---------------- 2. endereços e rota ---------------- */
+const textoEnd = a => `${a.rua}, ${a.num} - ${a.bairro}, ${a.cidade} - RJ`;
+const linkGoogle = () => `https://www.google.com/maps/dir/?api=1&origin=${enc(textoEnd(E.o))}&destination=${enc(textoEnd(E.d))}&travelmode=driving`;
+let estadoRota = "incompleto", tRota = null, rotaTok = 0, mapa = null, camada = null;
+
+function blocoEnd(p,titulo,cor){
+  const a=E[p];
+  const cidades=Object.keys(CIDADES);
+  const bairros=(LISTA[a.cidade]||[]).map(b=>`<option value="${esc(b.nome)}">`).join("");
+  return `<fieldset class="end" style="--cor:${cor}">
+    <legend><i></i>${titulo}</legend>
+    <div class="end-g">
+      <label class="cmp c-cep">CEP <span class="opt">· se souber, preenche a rua sozinho</span>
+        <input type="text" id="${p}Cep" data-end="${p}.cep" value="${esc(a.cep)}" inputmode="numeric" maxlength="9" placeholder="24400-000" autocomplete="postal-code"></label>
+      <label class="cmp c-rua">Rua
+        <input type="text" id="${p}Rua" data-end="${p}.rua" value="${esc(a.rua)}" placeholder="Nome da rua ou avenida" autocomplete="address-line1"></label>
+      <label class="cmp c-num">Número
+        <input type="text" id="${p}Num" data-end="${p}.num" value="${esc(a.num)}" inputmode="numeric" placeholder="125"></label>
+      <label class="cmp c-compl">Complemento <span class="opt">· opcional</span>
+        <input type="text" id="${p}Compl" data-end="${p}.compl" value="${esc(a.compl)}" placeholder="Apto 302, bloco B"></label>
+      <label class="cmp c-bai">Bairro
+        <input type="text" id="${p}Bairro" data-end="${p}.bairro" value="${esc(a.bairro)}" list="${p}ListaBairros" placeholder="${a.cidade?"Comece a digitar o bairro":"Escolha a cidade primeiro"}" autocomplete="off">
+        <datalist id="${p}ListaBairros">${bairros}</datalist></label>
+      <label class="cmp c-cid">Cidade
+        <select id="${p}Cidade" data-end="${p}.cidade"><option value="">Selecione…</option>${cidades.map(c=>`<option value="${c}" ${a.cidade===c?"selected":""}>${c}</option>`).join("")}</select></label>
+    </div>
+    <p class="end-msg" id="${p}Msg" aria-live="polite"></p>
+  </fieldset>`;
 }
 function telaTrajeto(){
-  const cidades = Object.keys(CIDADES);
-  const sel = (id,v) => `<select id="${id}"><option value="">Selecione a cidade…</option>${
-    cidades.map(c=>`<option value="${c}" ${v===c?"selected":""}>${c}</option>`).join("")}</select>`;
   return `<h2>De onde para onde?</h2>
-  <p class="ajuda">Escolha a cidade e o bairro. O mapa marca a região de cada ponto enquanto você preenche.</p>
+  <p class="ajuda">Digite os dois endereços. Assim que estiverem completos, a rota aparece no mapa para você conferir.</p>
   <div class="aviso at" style="margin-bottom:18px">🚫<div><b>Atendemos São Gonçalo, Niterói e Maricá</b>No momento não atendemos cidades do Rio de Janeiro, e não fazemos mudanças para outros estados.</div></div>
-  <div class="campos duo">
-    <label class="cmp">Cidade de origem${sel("origemCidade",E.origemCidade)}</label>
-    <label class="cmp">Bairro de origem${selectBairro("origemBairro",E.origemCidade,E.origemBairro)}</label>
-    <label class="cmp">Cidade de destino${sel("destinoCidade",E.destinoCidade)}</label>
-    <label class="cmp">Bairro de destino${selectBairro("destinoBairro",E.destinoCidade,E.destinoBairro)}</label>
-  </div>
-  ${mapaHTML()}
-  ${navRodape(!!(E.origemCidade&&E.origemBairro&&E.destinoCidade&&E.destinoBairro))}`;
+  <div class="campos" style="gap:18px">${blocoEnd("o","Endereço de origem","#FF2A32")}${blocoEnd("d","Endereço de destino","#34D1A0")}</div>
+  <div id="mapaRota" class="mapa-rota" role="img" aria-label="Mapa com a rota entre a origem e o destino"></div>
+  <div id="rotaInfo" class="rota-info"></div>
+  ${navRodape()}`;
 }
+function invalidaRota(){
+  E.rota=null; E.endOk=false; estadoRota="incompleto";
+  desenhaMapa(); pintaRotaInfo(); atualizaAvancar();
+}
+function agendaRota(ms){
+  clearTimeout(tRota);
+  if(endCompleto(E.o)&&endCompleto(E.d)){ estadoRota="pendente"; tRota=setTimeout(calculaRota,ms??1400); }
+  else estadoRota="incompleto";
+  pintaRotaInfo();
+}
+const DENTRO = (lat,lon) => lat>-23.06 && lat<-22.68 && lon>-43.20 && lon<-42.50;
+async function geocodifica(a){
+  const base="https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=br";
+  const uf="&state="+enc("Rio de Janeiro");
+  const tent=[
+    `&street=${enc(a.num.trim()+" "+a.rua.trim())}&city=${enc(a.cidade)}${uf}`,
+    `&street=${enc(a.rua.trim())}&city=${enc(a.cidade)}${uf}`,
+    a.cep.replace(/\D/g,"").length===8 ? `&postalcode=${enc(a.cep)}&city=${enc(a.cidade)}` : null,
+    `&q=${enc(a.bairro.trim()+", "+a.cidade+", Rio de Janeiro")}`
+  ];
+  let primeira=true;
+  for(let i=0;i<tent.length;i++){
+    if(!tent[i]) continue;
+    if(!primeira) await espera(1100);
+    primeira=false;
+    try{
+      const r=await fetch(base+tent[i],{headers:{"Accept-Language":"pt-BR"}});
+      if(!r.ok) continue;
+      const j=await r.json();
+      if(j[0]){ const lat=+j[0].lat, lon=+j[0].lon; if(DENTRO(lat,lon)) return {lat,lon,nivel:i}; }
+    }catch(e){}
+  }
+  return null;
+}
+function haversine(a,b){
+  const R=6371, r=x=>x*Math.PI/180;
+  const dLat=r(b.lat-a.lat), dLon=r(b.lon-a.lon);
+  const h=Math.sin(dLat/2)**2+Math.cos(r(a.lat))*Math.cos(r(b.lat))*Math.sin(dLon/2)**2;
+  return 2*R*Math.asin(Math.sqrt(h));
+}
+async function calculaRota(){
+  const tok=++rotaTok;
+  if(!(endCompleto(E.o)&&endCompleto(E.d))) return;
+  estadoRota="buscando"; pintaRotaInfo();
+  try{
+    let geocodificou=false;
+    for(const p of ["o","d"]){
+      if(E[p].lat==null){
+        if(geocodificou) await espera(1100);
+        const g=await geocodifica(E[p]); geocodificou=true;
+        if(tok!==rotaTok) return;
+        if(!g){ estadoRota="nao_achou_"+p; pintaRotaInfo(); return; }
+        Object.assign(E[p],g);
+      }
+    }
+    let rota=null;
+    try{
+      const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${E.o.lon},${E.o.lat};${E.d.lon},${E.d.lat}?overview=full&geometries=geojson`);
+      const j=await r.json();
+      if(j.routes&&j.routes[0]){
+        const rt=j.routes[0];
+        rota={km:rt.distance/1000,min:rt.duration/60,geo:rt.geometry.coordinates.map(c=>[+c[1].toFixed(5),+c[0].toFixed(5)]),reta:false};
+      }
+    }catch(e){}
+    if(tok!==rotaTok) return;
+    if(!rota){
+      const km=haversine(E.o,E.d)*1.35;
+      rota={km,min:km/30*60,geo:[[E.o.lat,E.o.lon],[E.d.lat,E.d.lon]],reta:true};
+    }
+    E.rota=rota; E.endOk=false; estadoRota="ok";
+    evento("CalcRota",{km:Math.round(rota.km)});
+    salvar(); desenhaMapa(); pintaRotaInfo(); atualizaAvancar();
+  }catch(e){
+    if(tok===rotaTok){ estadoRota="erro"; pintaRotaInfo(); }
+  }
+}
+function desenhaMapa(){
+  const box=document.getElementById("mapaRota"); if(!box) return;
+  if(!window.L){
+    box.innerHTML='<p class="dica" style="padding:16px">O mapa não carregou agora. Use o botão do Google Maps abaixo para conferir a rota.</p>';
+    return;
+  }
+  if(!mapa||mapa.getContainer()!==box){
+    if(mapa){ try{ mapa.remove(); }catch(e){} }
+    mapa=L.map(box,{scrollWheelZoom:false,tap:true}).setView([-22.87,-42.97],10);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{
+      maxZoom:19, subdomains:"abcd",
+      attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a>'
+    }).addTo(mapa);
+    camada=L.layerGroup().addTo(mapa);
+  }
+  camada.clearLayers();
+  const pin=(cor,txt)=>L.divIcon({className:"",html:`<div class="pinw" style="--c:${cor}"><span class="pin"></span><b>${txt}</b></div>`,iconSize:[22,22],iconAnchor:[11,27]});
+  const pts=[];
+  if(E.rota){
+    L.polyline(E.rota.geo,{color:"#FF2A32",weight:5,opacity:.95,dashArray:E.rota.reta?"8 8":null}).addTo(camada);
+    E.rota.geo.forEach(g=>pts.push(g));
+  }
+  if(E.o.lat!=null){ L.marker([E.o.lat,E.o.lon],{icon:pin("#FF2A32","Origem")}).addTo(camada); pts.push([E.o.lat,E.o.lon]); }
+  if(E.d.lat!=null){ L.marker([E.d.lat,E.d.lon],{icon:pin("#34D1A0","Destino")}).addTo(camada); pts.push([E.d.lat,E.d.lon]); }
+  if(pts.length>1) mapa.fitBounds(pts,{padding:[44,44],maxZoom:16});
+  else if(pts.length===1) mapa.setView(pts[0],15);
+  setTimeout(()=>{ try{ mapa.invalidateSize(); }catch(e){} },60);
+}
+function pintaRotaInfo(){
+  const box=document.getElementById("rotaInfo"); if(!box) return;
+  ["o","d"].forEach(p=>{
+    const m=document.getElementById(p+"Msg"); if(!m||!E.rota||E[p].nivel==null) return;
+    if(E[p].nivel>=2){ m.className="end-msg alerta"; m.textContent="Não achamos o número exato no mapa: o pino ficou na região do "+(E[p].nivel===2?"CEP":"bairro")+". Confira a rota no Google Maps."; }
+    else { m.className="end-msg ok"; m.textContent="✓ Endereço localizado no mapa"; }
+  });
+  const tentar=`<button type="button" class="btn btn-fan" data-acao="rota">Tentar de novo</button>`;
+  let h="";
+  if(estadoRota==="incompleto") h=`<p class="dica">Preencha rua, número, bairro e cidade dos dois endereços. A rota aparece no mapa sozinha.</p>`;
+  else if(estadoRota==="pendente"||estadoRota==="buscando") h=`<p class="dica carregando">Localizando os endereços e traçando a rota…</p>`;
+  else if(estadoRota.startsWith("nao_achou")){
+    const qual=estadoRota.endsWith("o")?"de origem":"de destino";
+    h=`<div class="aviso at">📍<div><b>Não encontramos o endereço ${qual} no mapa</b>Confira o nome da rua, o bairro e a cidade. Se souber o CEP, preencha que ajuda bastante.</div></div>${tentar}`;
+  }
+  else if(estadoRota==="erro") h=`<div class="aviso at">📶<div><b>Não conseguimos traçar a rota agora</b>Verifique a internet e tente de novo.</div></div>${tentar}`;
+  else if(estadoRota==="ok"&&E.rota){
+    const km=E.rota.km.toLocaleString("pt-BR",{maximumFractionDigits:1});
+    const min=Math.max(1,Math.round(E.rota.min));
+    h=`<div class="rota-km"><span>🛣️ <b class="tnum">${km} km</b> de carro</span><span>⏱️ cerca de <b class="tnum">${min} min</b></span></div>
+    ${E.rota.reta?`<p class="dica">Distância aproximada: não conseguimos traçar o caminho pelas ruas agora.</p>`:""}
+    <div><a class="btn btn-fan" href="${linkGoogle()}" target="_blank" rel="noopener">🗺️ Conferir a rota no Google Maps</a></div>
+    <button type="button" class="chk confirma" aria-pressed="${E.endOk}" data-bool="endOk">
+      <span class="bx">✓</span><div><b>Os endereços de origem e destino estão certos</b><small>Se o pino ou a rota estiverem no lugar errado, corrija a rua ou o número acima.</small></div></button>`;
+  }
+  box.innerHTML=h;
+}
+async function buscaCep(p,cep){
+  const m=document.getElementById(p+"Msg");
+  if(m){ m.className="end-msg"; m.textContent="Buscando o CEP…"; }
+  try{
+    const r=await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+    const j=await r.json();
+    if(E[p].cep.replace(/\D/g,"")!==cep) return;
+    if(j.erro){ if(m){ m.className="end-msg alerta"; m.textContent="CEP não encontrado. Confira os números ou preencha a rua à mão."; } return; }
+    const cidade=Object.keys(CIDADES).find(c=>c.localeCompare(j.localidade,"pt-BR",{sensitivity:"base"})===0);
+    if(j.uf!=="RJ"||!cidade){
+      if(m){ m.className="end-msg alerta"; m.textContent=`Esse CEP é de ${j.localidade}/${j.uf}. No momento atendemos só São Gonçalo, Niterói e Maricá.`; }
+      return;
+    }
+    const a=E[p];
+    if(j.logradouro) a.rua=j.logradouro;
+    if(j.bairro) a.bairro=j.bairro;
+    a.cidade=cidade; a.lat=null; a.lon=null; a.nivel=null;
+    const set=(id,v)=>{ const n=document.getElementById(id); if(n) n.value=v; };
+    set(p+"Rua",a.rua); set(p+"Bairro",a.bairro); set(p+"Cidade",a.cidade);
+    atualizaBairros(p);
+    if(m){ m.className="end-msg ok"; m.textContent=j.logradouro?"✓ Rua encontrada pelo CEP. Agora é só o número.":"✓ Cidade encontrada. Esse CEP é geral: preencha a rua e o número."; }
+    const alvo=document.getElementById(j.logradouro?p+"Num":p+"Rua");
+    if(alvo&&!alvo.value) alvo.focus();
+    salvar(); invalidaRota(); agendaRota();
+  }catch(e){
+    if(m){ m.className="end-msg alerta"; m.textContent="Não conseguimos consultar o CEP agora. Preencha a rua à mão."; }
+  }
+}
+function atualizaBairros(p){
+  const dl=document.getElementById(p+"ListaBairros");
+  if(dl) dl.innerHTML=(LISTA[E[p].cidade]||[]).map(b=>`<option value="${esc(b.nome)}">`).join("");
+  const n=document.getElementById(p+"Bairro");
+  if(n) n.placeholder=E[p].cidade?"Comece a digitar o bairro":"Escolha a cidade primeiro";
+}
+
+/* ---------------- 3. acesso ---------------- */
 function telaAcesso(){
   const bloco=(p,rot)=>{
-    const tipo=E[p+"Tipo"], andar=E[p+"Andar"]||0;
+    const tipo=E[p+"Tipo"], andar=E[p+"Andar"]||0, elev=E[p+"Elevador"];
     let h=`<div><p class="rotulo" style="margin-bottom:10px">${rot}</p>
       <div class="opcoes g3">
         ${opc("casa",p+"Tipo","🏠","Casa térrea","")}
         ${opc("sobrado",p+"Tipo","🏘️","Sobrado","")}
         ${opc("apto",p+"Tipo","🏢","Apartamento","")}
       </div>`;
+    if(tipo==="sobrado"){
+      h+=`<label class="cmp" style="margin-top:14px;max-width:340px">Quantos degraus tem a escada?
+        <input type="number" id="${p}Degraus" value="${esc(E[p+"Degraus"])}" min="1" max="300" inputmode="numeric" placeholder="Ex.: 18"></label>
+        <p class="dica" style="margin-top:6px">Conte do térreo até o andar de cima. Se tiver mais de uma escada, some todas.</p>`;
+    }
     if(tipo==="apto"){
-      h+=`<label class="cmp" style="margin-top:14px">Em qual andar?
+      h+=`<label class="cmp" style="margin-top:14px;max-width:340px">Em qual andar?
         <select data-num="${p}Andar">${[0,1,2,3,4,5,6,7,8,9,10,12,15,20].map(n=>`<option value="${n}" ${andar==n?"selected":""}>${n===0?"Térreo":n+"º andar"}</option>`).join("")}</select></label>`;
       if(andar>0){
         h+=`<div class="opcoes g3" style="margin-top:12px">
@@ -775,32 +1037,41 @@ function telaAcesso(){
           ${opc("social",p+"Elevador","🚪","Só elevador social","Com regra de horário")}
           ${opc("nao",p+"Elevador","🪜","Sem elevador","Tudo pela escada")}
         </div>`;
+        if(elev==="servico"||elev==="social"){
+          h+=`<p class="sub-perg">Todos os móveis cabem no elevador?</p>
+          <div class="opcoes g2">
+            ${opc("sim",p+"Cabe","✅","Sim, tudo cabe no elevador","")}
+            ${opc("nao",p+"Cabe","🪜","Não, alguns vão pela escada","Sofá, guarda-roupa, geladeira grande…")}
+          </div>`;
+          if(E[p+"Cabe"]==="nao"){
+            h+=`<label class="cmp" style="margin-top:12px">Quais itens vão ${p==="o"?"descer":"subir"} pela escada?
+              <textarea id="${p}EscadaItens" placeholder="Ex.: guarda-roupa de 6 portas, sofá de 3 lugares e a geladeira duplex">${esc(E[p+"EscadaItens"])}</textarea></label>`;
+          }
+        }
       }
     }
     return h+"</div>";
   };
-  const ok = E.oTipo && E.dTipo &&
-    (E.oTipo!=="apto" || E.oAndar==0 || E.oElevador) &&
-    (E.dTipo!=="apto" || E.dAndar==0 || E.dElevador);
   let alerta="";
   if((E.oElevador==="nao"&&E.oAndar>=3)||(E.dElevador==="nao"&&E.dAndar>=3)){
-    alerta=`<div class="aviso at" style="margin-top:18px">🏗️<div><b>Andar alto sem elevador</b>Móveis grandes como guarda-roupa de 6 portas e geladeira duplex costumam precisar de içamento. Na próxima etapa de extras essa opção já vem destacada.</div></div>`;
+    alerta=`<div class="aviso at" style="margin-top:18px">🏗️<div><b>Andar alto sem elevador</b>Móveis grandes como guarda-roupa de 6 portas e geladeira duplex costumam precisar de içamento. Na etapa de extras essa opção já vem destacada.</div></div>`;
   }
   return `<h2>Como é o acesso nos dois endereços?</h2>
-  <p class="ajuda">Escada e rua estreita mudam o tempo da equipe. É por isso que o valor fica mais preciso aqui.</p>
+  <p class="ajuda">Escada, elevador e rua estreita mudam o tempo da equipe. Com essas respostas o orçamento sai mais certo.</p>
   <div class="campos" style="gap:26px">${bloco("o","Endereço de origem")}${bloco("d","Endereço de destino")}</div>
   <div style="margin-top:18px">
     <button type="button" class="chk" aria-pressed="${E.ruaDificil}" data-bool="ruaDificil">
       <span class="bx">✓</span><div><b>🚧 A rua é estreita ou o caminhão não encosta na porta</b><small>Rua sem saída, ladeira, viela ou condomínio com restrição de acesso</small></div></button>
-  </div>${alerta}${navRodape(ok)}`;
+  </div>${alerta}${navRodape()}`;
 }
+
+/* ---------------- 4. itens ---------------- */
 function telaItens(){
   const C=CONFIG.caminhao, vol=volumeTotal();
   const viagens=Math.max(1,Math.ceil(vol/C.m3PorViagem));
   const totalItens=Object.values(E.itens).reduce((a,b)=>a+(b||0),0);
-  const portes=[["kitnet","🚪","Kitnet / studio"],["um","🛏️","1 quarto"],["dois","🛏️","2 quartos"],["tres","🏠","3 quartos"],["casa","🏡","4+ ou casa grande"]];
   let h=`<h2>O que vai ser transportado?</h2>
-  <p class="ajuda">Quanto mais fiel a lista, mais perto do valor final o orçamento chega.</p>
+  <p class="ajuda">Quanto mais fiel a lista, mais certo sai o orçamento.</p>
   <div class="comofaz">
     <b>Como preencher, cômodo por cômodo</b>
     <ol>
@@ -821,7 +1092,7 @@ function telaItens(){
   </div>`;
   if(E.servico!=="frete"){
     h+=`<p class="rotulo" style="margin-bottom:10px">Atalho: preencher pelo tamanho do imóvel</p>
-    <div class="opcoes g3" style="margin-bottom:8px">${portes.map(p=>`<button type="button" class="opc" aria-pressed="${E.porte===p[0]}" data-preset="${p[0]}"><span class="emj">${p[1]}</span><div><b>${p[2]}</b></div></button>`).join("")}</div>
+    <div class="opcoes g3" style="margin-bottom:8px">${PORTES.map(p=>`<button type="button" class="opc" aria-pressed="${E.porte===p[0]}" data-preset="${p[0]}"><span class="emj">${p[1]}</span><div><b>${p[2]}</b></div></button>`).join("")}</div>
     <p style="font-size:13px;color:var(--ink-muted);margin-bottom:20px">A lista é preenchida com o padrão desse tamanho. Depois é só ajustar o que tiver a mais ou a menos.</p>`;
   }
   h+=COMODOS.map((c,i)=>{
@@ -837,136 +1108,235 @@ function telaItens(){
         </div>`;}).join("")}</div></details>`;
   }).join("");
   h+=`<div class="resumo-vol" id="resumoVol">${resumoVolHTML(vol,totalItens,viagens)}</div>`;
-  if(viagens>1) h+=`<div class="aviso at" style="margin-top:14px">🔁<div><b>Essa lista precisa de ${viagens} viagens</b>O ${C.nome} leva cerca de ${C.m3PorViagem} m³ por vez. As viagens extras já entram no valor, e a equipe organiza tudo no mesmo dia sempre que a distância permite.</div></div>`;
+  if(viagens>1) h+=`<div class="aviso at" style="margin-top:14px">🔁<div><b>Essa lista precisa de ${viagens} viagens</b>O ${C.nome} leva cerca de ${C.m3PorViagem} m³ por vez. A equipe organiza tudo no mesmo dia sempre que a distância permite.</div></div>`;
   if(vol>24) h+=`<div class="aviso info" style="margin-top:14px">🧭<div><b>Mudança de grande porte</b>Nesse volume a gente costuma fazer uma vistoria gratuita antes de fechar, para confirmar o número de viagens.</div></div>`;
-  return h+navRodape(totalItens>0);
+  return h+navRodape();
 }
 function resumoVolHTML(vol,totalItens,viagens){
   return `<span>📐 Volume estimado <b class="tnum">${vol.toLocaleString("pt-BR",{maximumFractionDigits:1})} m³</b></span>
     <span>📦 <b class="tnum">${totalItens}</b> ${totalItens===1?"item":"itens"}</span>
     <span>🚚 <b class="tnum">${viagens}</b> ${viagens===1?"viagem":"viagens"} no Bongo</span>`;
 }
+
+/* ---------------- 5. ajudantes e extras ---------------- */
 function telaExtras(){
-  const P=CONFIG.precos, vol=volumeTotal();
-  const sug=sugereAjudantes(vol), esc=E.ajudantes||sug;
+  const P=CONFIG.precos, vol=volumeTotal(), sug=sugereAjudantes(vol);
   const precisaIcar=(E.oElevador==="nao"&&E.oAndar>=3)||(E.dElevador==="nao"&&E.dAndar>=3)||E.servico==="icamento";
   const grandes=["gr6","duplex","sofaret","piano","esteira"].filter(id=>(E.itens[id]||0)>0).map(id=>itemPorId[id].nome);
-  let h=`<h2>Quer incluir algum serviço extra?</h2>
-  <p class="ajuda">Tudo opcional. Se não quiser nada agora, é só pular — dá para incluir depois.</p>`;
+  const opAj=[
+    [0,"🙋","Sem ajudante","Eu providencio quem carrega"],
+    [1,"💪","1 ajudante",""],
+    [2,"🤝","2 ajudantes",""],
+    [3,"👷","3 ajudantes",""]
+  ];
+  let h=`<h2>Quantos ajudantes você quer?</h2>
+  <p class="ajuda">Escolha a equipe para carregar e descarregar. No orçamento a gente te passa o valor com e sem ajudante, para você comparar.</p>`;
   if(precisaIcar){
     h+=`<div class="aviso at" style="margin-bottom:16px">🏗️<div><b>Recomendamos içamento neste caso</b>${grandes.length?`Você marcou ${grandes.join(", ")} e informou andar alto sem elevador de serviço.`:"Você informou andar alto sem elevador de serviço."} Sem içamento, esses móveis podem não subir.</div></div>`;
   }
-  h+=`<p class="rotulo" style="margin-bottom:10px">Quantos ajudantes na equipe?</p>
-  <div class="opcoes g3">${[1,2,3].map(n=>`
-    <button type="button" class="opc" aria-pressed="${esc===n}" data-ajud="${n}">
-      <span class="emj">${n===1?"💪":n===2?"🤝":"👷"}</span>
-      <div><b>${n} ${n>1?"ajudantes":"ajudante"}</b><small>${brl(n*P.ajudanteDia)}${n===sug?" · recomendado":""}</small></div>
-    </button>`).join("")}</div>
-  <p style="font-size:13px;color:var(--ink-muted);margin:8px 0 20px">Mais gente na equipe deixa a carga e a descarga bem mais rápidas, principalmente quando tem escada ou móvel grande.</p>
+  h+=`<div class="opcoes g2">${opAj.map(([n,emj,t,s])=>`
+    <button type="button" class="opc" aria-pressed="${E.ajudantes===n}" data-ajud="${n}">
+      <span class="emj">${emj}</span><div><b>${t}</b><small>${s}${n===sug?(s?" · ":"")+"Recomendado para a sua lista":""}</small></div>
+    </button>`).join("")}</div>`;
+  if(E.ajudantes===0||E.ajudantes===1){
+    h+=`<div class="aviso at" style="margin-top:14px">⚠️<div><b>O motorista não faz a função de ajudante</b>${E.ajudantes===1
+      ?"Com 1 ajudante, você vai precisar de mais uma pessoa para carregar junto com ele: alguém seu, ou escolha 2 ajudantes."
+      :"Sem ajudante, você precisa de pelo menos duas pessoas suas para carregar e descarregar."} A exceção é frete de pequeno porte, com itens simples como um colchão ou uma mesa: nesse caso avaliamos se o motorista ajuda a carregar.</div></div>`;
+  }
+  h+=`<p class="rotulo" style="margin:26px 0 10px">Serviços extras (opcional)</p>
   <div class="opcoes" style="gap:10px">
-    ${chk("montagem","🧰","Desmontagem e montagem","Guarda-roupa, cama box, estante e painel desmontados e remontados",brl(P.montagem))}
+    ${chk("montagem","🧰","Desmontagem e montagem","Guarda-roupa, cama box, estante e painel desmontados e remontados","a partir de "+brl(P.montagem))}
     ${chk("icamento","🏗️","Içamento pela janela","Para móveis que não passam na escada nem no elevador","a partir de "+brl(P.icamento))}
   </div>
   <div class="aviso info" style="margin-top:16px">📦<div><b>Não trabalhamos com embalagem</b>Os móveis seguem protegidos e amarrados na carroceria, mas caixas, louças e itens frágeis precisam vir embalados por você.</div></div>
-  ${navRodape(true,"Continuar",true)}`;
+  ${navRodape()}`;
   return h;
 }
-function telaData(){
-  const hoje=new Date().toISOString().slice(0,10);
-  let h=`<h2>Quando você pretende mudar?</h2>
-  <p class="ajuda">Mesmo sem data fechada, responda — isso ajuda a reservar o caminhão.</p>
-  <div class="opcoes g2">
-    ${opc("ate7","quando","⚡","Nos próximos 7 dias","Já estou com tudo definido")}
-    ${opc("ate15","quando","📅","Em até 15 dias","Estou organizando")}
-    ${opc("ate30","quando","🗓️","Em até 30 dias","Ainda tem tempo")}
-    ${opc("pesquisando","quando","🔎","Só pesquisando preço","Sem data definida")}
-  </div>
-  <div class="aviso info" style="margin-top:16px">📅<div><b>Trabalhamos de domingo a domingo</b>Inclusive feriados, e sem acréscimo no valor por causa do dia escolhido.</div></div>`;
-  if(E.quando && E.quando!=="pesquisando"){
-    h+=`<label class="cmp" style="margin-top:18px;max-width:300px">Já tem uma data? (opcional)<input type="date" id="dataEsc" min="${hoje}" value="${E.dataEsc}"></label>`;
-  }
-  if(E.quando==="pesquisando"){
-    h+=`<div class="aviso info" style="margin-top:14px">🔒<div><b>Tranquilo, sem compromisso</b>O valor que aparecer na próxima tela fica travado por 7 dias. Você pesquisa com calma e volta quando decidir.</div></div>`;
-  }
-  h+=`<label class="cmp" style="margin-top:18px">Algo que a gente precisa saber? (opcional)<textarea id="obs" placeholder="Ex.: tem um aquário grande, o condomínio só libera mudança até as 17h, preciso de ajuda para descer pela escada...">${E.obs}</textarea></label>`;
-  return h+navRodape(!!E.quando,"Ver meu orçamento",true);
-}
-function telaContato(){
-  const c=calcular();
-  if(!E.visto){
-    return `<h2>Pronto. Para onde mandamos o orçamento?</h2>
-    <p class="ajuda">O cálculo já está feito. Preencha o nome e o WhatsApp para ver o valor e receber o resumo da mudança.</p>
-    <div class="aviso info" style="margin-bottom:18px">✅<div><b>Seu orçamento está calculado</b>${c.vol.toLocaleString("pt-BR",{maximumFractionDigits:1})} m³ · ${c.viagens} ${c.viagens>1?"viagens":"viagem"} · ${c.ajudantes} ${c.ajudantes>1?"ajudantes":"ajudante"}${E.origemBairro?` · ${E.origemBairro} → ${E.destinoBairro}`:""}</div></div>
-    <div class="campos duo">
-      <label class="cmp">Seu nome<input type="text" id="nome" value="${E.nome}" placeholder="Como podemos te chamar?" autocomplete="name"></label>
-      <label class="cmp">WhatsApp<input type="tel" id="tel" value="${E.tel}" placeholder="(21) 9 0000-0000" inputmode="tel" autocomplete="tel"></label>
-    </div>
-    <div style="margin-top:14px">
-      <button type="button" class="chk" aria-pressed="${E.querEmail}" data-bool="querEmail">
-        <span class="bx">✓</span><div><b>📧 Também quero receber o orçamento detalhado por e-mail</b><small>Opcional — útil para comparar com outras empresas</small></div></button>
-    </div>
-    ${E.querEmail?`<label class="cmp" style="margin-top:14px">Seu e-mail<input type="email" id="email" value="${E.email}" placeholder="voce@email.com" autocomplete="email"></label>`:""}
-    <p style="font-size:12.5px;color:var(--ink-muted);margin-top:14px">Usamos seus dados só para enviar este orçamento e combinar a mudança. Nada de ligação insistente.</p>
-    <div class="rodape-calc">
-      <button type="button" class="btn btn-fan" data-nav="-1">Voltar</button>
-      <div class="dir"><button type="button" class="btn btn-pri" id="verPreco">Ver meu valor agora</button></div>
-    </div>`;
-  }
-  const resumo=montarResumo(c);
-  return `<div class="preco">
-      <div class="de">Sua mudança sai a partir de</div>
-      <div class="vl">${brl(c.minimo)}</div>
-      <div class="fx">Faixa estimada: ${brl(c.minimo)} a ${brl(c.teto)} · valor travado por 7 dias</div>
-    </div>
-    <div class="aviso info" style="margin-top:16px">🚚<div><b>${CONFIG.caminhao.nome} · ${c.viagens} ${c.viagens>1?"viagens":"viagem"} · ${c.ajudantes} ${c.ajudantes>1?"ajudantes":"ajudante"} · ${c.vol.toLocaleString("pt-BR",{maximumFractionDigits:1})} m³</b>${E.origemBairro||""}${E.destinoBairro?` → ${E.destinoBairro}`:""}</div></div>
-    <div class="aviso info" style="margin-top:10px">💳<div><b>Você só paga depois</b>O pagamento é feito após o serviço concluído, com a mudança já entregue.</div></div>
-    <p class="rotulo" style="margin:24px 0 10px">Como chegamos nesse valor</p>
-    <div class="quebra">
-      ${c.linhas.map(l=>`<div><span>${l.rot}</span><span>${brl(l.val)}</span></div>`).join("")}
-      <div class="tot"><span>Estimativa total</span><span>${brl(c.total)}</span></div>
-    </div>
-    <p style="font-size:12.5px;color:var(--ink-muted);margin-top:12px">Estimativa baseada nos itens informados. O valor fechado sai após a confirmação dos endereços e, em mudanças grandes, de uma vistoria gratuita.</p>
-    <div class="rodape-calc">
-      <button type="button" class="btn btn-fan" data-nav="-1">Ajustar alguma coisa</button>
-      <div class="dir">
-        <button type="button" class="btn btn-fan" id="copiar">Copiar resumo</button>
-        <a class="btn btn-zap" id="enviarZap" target="_blank" rel="noopener" href="https://wa.me/${CONFIG.marca.whatsapp}?text=${encodeURIComponent(resumo)}">Enviar para o WhatsApp</a>
-      </div>
-    </div>
-    <p style="font-size:13px;color:var(--ink-muted);margin-top:14px">Se o botão não abrir o WhatsApp, chame no número <strong class="tnum" style="color:var(--ink)">${CONFIG.marca.whatsappExibicao}</strong> e cole o resumo copiado.</p>`;
-}
-function montarResumo(c){
-  const itens=Object.keys(E.itens).filter(id=>E.itens[id]>0)
-    .map(id=>`${itemPorId[id].emj} ${E.itens[id]}x ${itemPorId[id].nome}`).join("\n");
-  const servicos={residencial:"Mudança residencial",comercial:"Mudança comercial",frete:"Frete / carreto",icamento:"Içamento"};
-  const quandos={ate7:"Nos próximos 7 dias",ate15:"Em até 15 dias",ate30:"Em até 30 dias",pesquisando:"Ainda pesquisando"};
-  const extrasN={montagem:"Desmontagem e montagem",icamento:"Içamento"};
-  const acesso=p=>{
-    const t=E[p+"Tipo"], a=E[p+"Andar"]||0, el=E[p+"Elevador"];
-    const tn={casa:"Casa térrea",sobrado:"Sobrado",apto:"Apartamento"}[t]||"-";
-    const en={servico:"com elevador de serviço",social:"só elevador social",nao:"sem elevador"}[el]||"";
-    return tn+(t==="apto"&&a>0?` ${a}º andar ${en}`:"");
-  };
-  return `*Orçamento pelo site — ${CONFIG.marca.nome}*
-Olá! Calculei minha mudança no site e quero fechar.
 
-*Nome:* ${E.nome||"-"}
-*WhatsApp:* ${E.tel||"-"}${E.email?`\n*E-mail:* ${E.email}`:""}
+/* ---------------- 6. agenda ---------------- */
+const OCUP = {};                 // "2026-11-12" -> Set("manha","tarde")
+let agendaStatus = "carregando";
+let mesVis = (()=>{ const d=E.dataEsc?new Date(E.dataEsc+"T12:00"):new Date(); return [d.getFullYear(),d.getMonth()]; })();
+const semAcento = s => String(s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").trim();
+function normData(s){
+  s=String(s||"").trim();
+  let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+  m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/); if(m) return `${m[3]}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`;
+  return "";
+}
+function marcaOcupado(data,turno){
+  const d=normData(data); if(!d) return;
+  const t=semAcento(turno);
+  const lista=t.startsWith("man")?["manha"]:t.startsWith("tar")?["tarde"]:CONFIG.agenda.turnos.map(x=>x.id);
+  (OCUP[d]=OCUP[d]||new Set()); lista.forEach(x=>OCUP[d].add(x));
+}
+const turnoLivre = (d,t) => !(OCUP[d]&&OCUP[d].has(t));
+async function carregaAgenda(){
+  (CONFIG.agenda.confirmados||[]).forEach(x=>marcaOcupado(x.data,x.turno));
+  if(!CONFIG.agenda.fonte){ agendaStatus="ok"; pintaAgenda(); return; }
+  try{
+    const r=await fetch(CONFIG.agenda.fonte,{cache:"no-store"});
+    if(!r.ok) throw new Error("http "+r.status);
+    const txt=await r.text();
+    let lista;
+    try{ const j=JSON.parse(txt); lista=Array.isArray(j)?j:(j.servicos||j.agenda||j.data||[]); }
+    catch(e){
+      lista=txt.split(/\r?\n/).map(l=>l.split(/[;,\t]/)).filter(c=>normData(c[0]))
+        .map(c=>({data:c[0],turno:c[1]||"",status:c[2]||"confirmado"}));
+    }
+    lista.forEach(x=>{
+      const st=semAcento(x.status||"confirmado");
+      if(st.startsWith("confirm")) marcaOcupado(x.data||x.dia,x.turno||x.periodo);
+    });
+    agendaStatus="ok";
+  }catch(e){ agendaStatus="erro"; }
+  if(E.dataEsc&&E.turno&&!turnoLivre(E.dataEsc,E.turno)){ E.turno=""; salvar(); }
+  pintaAgenda();
+}
+function agendaHTML(){
+  const [y,m]=mesVis, hoje=new Date(); hoje.setHours(0,0,0,0);
+  const lim=new Date(hoje); lim.setDate(lim.getDate()+CONFIG.agenda.diasAFrente);
+  const primeiro=new Date(y,m,1), dias=new Date(y,m+1,0).getDate();
+  const ix=y*12+m, podeAnt=ix>hoje.getFullYear()*12+hoje.getMonth(), podeProx=ix<lim.getFullYear()*12+lim.getMonth();
+  const T=CONFIG.agenda.turnos;
+  let h=`<div class="ag-cab">
+    <button type="button" class="ag-nav" data-mes="-1" ${podeAnt?"":"disabled"} aria-label="Mês anterior">‹</button>
+    <h3>${(s=>s[0].toUpperCase()+s.slice(1))(primeiro.toLocaleDateString("pt-BR",{month:"long"}))} de ${y}</h3>
+    <button type="button" class="ag-nav" data-mes="1" ${podeProx?"":"disabled"} aria-label="Próximo mês">›</button>
+  </div><div class="ag-grade">`;
+  ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"].forEach(s=>h+=`<span class="ag-sem">${s}</span>`);
+  for(let i=0;i<primeiro.getDay();i++) h+=`<span></span>`;
+  for(let d=1;d<=dias;d++){
+    const dt=new Date(y,m,d), s=iso(dt), passado=dt<hoje, fora=dt>lim;
+    const oc=OCUP[s]||new Set(), cheio=T.every(t=>oc.has(t.id));
+    const fechado=passado||fora;
+    h+=`<button type="button" class="ag-dia${s===hojeISO?" hoje":""}${cheio&&!fechado?" cheio":""}" data-dia="${s}" aria-pressed="${E.dataEsc===s}" ${fechado||cheio?"disabled":""}
+      aria-label="${dt.toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"})}${cheio?", lotado":""}">
+      <span class="n">${d}</span>${fechado?"":`<span class="tr">${T.map(t=>`<i class="${oc.has(t.id)?"oc":""}"></i>`).join("")}</span>`}</button>`;
+  }
+  h+=`</div>
+  <div class="ag-leg"><span><i></i>Turno livre</span><span><i class="oc"></i>Turno ocupado</span><span>Barrinha da esquerda: manhã · da direita: tarde</span></div>`;
+  if(agendaStatus==="carregando") h+=`<p class="dica" style="margin-top:8px">Atualizando a agenda…</p>`;
+  if(agendaStatus==="erro") h+=`<p class="dica" style="margin-top:8px">Não conseguimos atualizar a agenda agora. Escolha o dia mesmo assim, e confirmamos a vaga no WhatsApp.</p>`;
+  if(E.dataEsc){
+    const oc=OCUP[E.dataEsc]||new Set();
+    h+=`<p class="rotulo" style="margin:20px 0 10px">Turno em ${dataBR(E.dataEsc)}, ${diaSemana(E.dataEsc)}</p>
+    <div class="opcoes g2">${T.map(t=>{ const o=oc.has(t.id);
+      return `<button type="button" class="opc turno" data-turno="${t.id}" aria-pressed="${E.turno===t.id}" ${o?"disabled":""}>
+        <span class="emj">${t.emj}</span><div><b>${t.nome}</b><small>${o?"Ocupado":t.hora}</small></div></button>`; }).join("")}</div>`;
+  }
+  return h;
+}
+function pintaAgenda(){ const a=document.getElementById("agenda"); if(a) a.innerHTML=agendaHTML(); atualizaAvancar(); }
+function telaData(){
+  return `<h2>Para quando é a mudança?</h2>
+  <p class="ajuda">Escolha o dia e o turno no calendário. Os turnos que já têm serviço confirmado aparecem ocupados.</p>
+  <div class="aviso at">⚠️<div><b>A vaga só fica garantida depois que confirmamos com você</b>Não cobramos sinal nem reserva antecipada. Por isso, um pedido ainda não confirmado pode perder a vaga se outro cliente confirmar antes.</div></div>
+  <div class="agenda ${E.semData?"oculto":""}" id="agenda">${agendaHTML()}</div>
+  <div style="margin-top:14px">
+    <button type="button" class="chk" aria-pressed="${E.semData}" data-bool="semData">
+      <span class="bx">✓</span><div><b>Ainda não tenho data definida</b><small>Mando o formulário agora e combino o dia depois pelo WhatsApp</small></div></button>
+  </div>
+  <div class="aviso info" style="margin-top:14px">📅<div><b>Trabalhamos de domingo a domingo</b>Inclusive feriados, e sem acréscimo no valor por causa do dia escolhido.</div></div>
+  <label class="cmp" style="margin-top:18px">Algo que a gente precisa saber? (opcional)<textarea id="obs" placeholder="Ex.: tem um aquário grande, o condomínio só libera mudança até as 17h...">${esc(E.obs)}</textarea></label>
+  ${navRodape()}`;
+}
+
+/* ---------------- 7. envio para o WhatsApp ---------------- */
+function textoAcesso(p){
+  const t=E[p+"Tipo"], a=E[p+"Andar"]||0, el=E[p+"Elevador"];
+  if(t==="casa") return "Casa térrea";
+  if(t==="sobrado") return `Sobrado, escada com ${E[p+"Degraus"]||"?"} degraus`;
+  if(t==="apto"){
+    if(a===0) return "Apartamento no térreo";
+    let s=`Apartamento no ${a}º andar, `+({servico:"com elevador de serviço",social:"só elevador social",nao:"sem elevador"}[el]||"");
+    if(el&&el!=="nao") s+=E[p+"Cabe"]==="nao"?`. Pela escada: ${E[p+"EscadaItens"].trim()}`:", tudo cabe no elevador";
+    return s;
+  }
+  return "-";
+}
+function textoAjudantes(){
+  const n=E.ajudantes;
+  return n===0?"Sem ajudante (eu providencio quem carrega)":n===1?"1 ajudante":`${n} ajudantes`;
+}
+function textoData(){
+  if(E.semData||!E.dataEsc) return "Ainda sem data definida";
+  const t=CONFIG.agenda.turnos.find(x=>x.id===E.turno);
+  return `${dataBR(E.dataEsc)} (${diaSemana(E.dataEsc)})${t?`, turno da ${t.nome.toLowerCase()}`:""}`;
+}
+function endCompletoTexto(a){
+  return `${a.rua}, ${a.num}${a.compl.trim()?` (${a.compl.trim()})`:""} - ${a.bairro}, ${a.cidade}${a.cep?` - CEP ${a.cep}`:""}`;
+}
+function montarResumo(){
+  const c=calcular();
+  const itens=Object.keys(E.itens).filter(id=>E.itens[id]>0)
+    .map(id=>`${E.itens[id]}x ${itemPorId[id].nome}`).join("\n");
+  const servicos={residencial:"Mudança residencial",comercial:"Mudança comercial",frete:"Frete / carreto",icamento:"Içamento"};
+  const extrasN={montagem:"Desmontagem e montagem",icamento:"Içamento"};
+  const km=E.rota?E.rota.km.toLocaleString("pt-BR",{maximumFractionDigits:1}):"";
+  return `*Formulário de orçamento — ${CONFIG.marca.nome}*
+Olá! Preenchi o formulário no site e quero receber meu orçamento, com e sem ajudante.
+
+*Nome:* ${E.nome.trim()}
+*WhatsApp:* ${E.tel.trim()}${E.querEmail&&E.email.trim()?`\n*E-mail:* ${E.email.trim()}`:""}
 
 *Serviço:* ${servicos[E.servico]||"-"}
-*Origem:* ${E.origemBairro||"-"}, ${E.origemCidade||"-"} (${acesso("o")})
-*Destino:* ${E.destinoBairro||"-"}, ${E.destinoCidade||"-"} (${acesso("d")})
-${E.ruaDificil?"*Atenção:* rua estreita / caminhão não encosta na porta\n":""}*Quando:* ${quandos[E.quando]||"-"}${E.dataEsc?` (${E.dataEsc.split("-").reverse().join("/")})`:""}
+*Origem:* ${endCompletoTexto(E.o)}
+↳ ${textoAcesso("o")}
+*Destino:* ${endCompletoTexto(E.d)}
+↳ ${textoAcesso("d")}
+${E.rota?`*Distância:* ${km} km, cerca de ${Math.max(1,Math.round(E.rota.min))} min (endereços confirmados no mapa)\n*Rota:* ${linkGoogle()}\n`:""}${E.ruaDificil?"*Atenção:* rua estreita / o caminhão não encosta na porta\n":""}
+*Data:* ${textoData()}
+*Ajudantes:* ${textoAjudantes()}
+${E.extras.length?`*Extras:* ${E.extras.map(e=>extrasN[e]).join(", ")}\n`:""}*Volume:* ${c.vol.toLocaleString("pt-BR",{maximumFractionDigits:1})} m³ · ${c.viagens} ${c.viagens>1?"viagens":"viagem"} no ${CONFIG.caminhao.nome}
 
-*Volume:* ${c.vol.toLocaleString("pt-BR",{maximumFractionDigits:1})} m³
-*Caminhão:* ${CONFIG.caminhao.nome} · ${c.viagens} ${c.viagens>1?"viagens":"viagem"}
-*Equipe de carga:* ${c.ajudantes} ${c.ajudantes>1?"ajudantes":"ajudante"}
-${E.extras.length?`*Extras:* ${E.extras.map(e=>extrasN[e]).join(", ")}\n`:""}
 *Itens:*
-${itens||"-"}
-${E.obs?`\n*Observações:* ${E.obs}`:""}
-
-*Estimativa do site:* a partir de ${brl(c.minimo)} (faixa ${brl(c.minimo)} a ${brl(c.teto)})`;
+${itens||"-"}${E.obs.trim()?`\n\n*Observações:* ${E.obs.trim()}`:""}`;
+}
+const linkZap = () => `https://wa.me/${CONFIG.marca.whatsapp}?text=${enc(montarResumo())}`;
+function telaContato(){
+  const c=calcular();
+  if(E.enviado){
+    return `<div class="enviado">
+      <div class="ok-ic" aria-hidden="true">✓</div>
+      <h2>Formulário pronto no seu WhatsApp</h2>
+      <p class="ajuda" style="margin-inline:auto">Abrimos o WhatsApp com tudo preenchido. Confira e toque em <b>enviar</b> lá dentro para a gente receber. Respondemos com o orçamento, com e sem ajudante.</p>
+      <div class="enviado-bt">
+        <a class="btn btn-zap" href="${linkZap()}" target="_blank" rel="noopener">Abrir o WhatsApp de novo</a>
+        <button type="button" class="btn btn-fan" id="copiar">Copiar o formulário</button>
+      </div>
+      <p class="dica" style="margin-top:14px">Se o WhatsApp não abrir, chame no número <strong class="tnum" style="color:var(--ink)">${CONFIG.marca.whatsappExibicao}</strong> e cole o formulário copiado.</p>
+      <div class="rodape-calc" style="justify-content:center">
+        <button type="button" class="btn btn-fan" data-nav="-1">Ajustar alguma coisa</button>
+        <button type="button" class="btn btn-fan" id="novoOrc">Fazer outro pedido</button>
+      </div>
+    </div>`;
+  }
+  const km=E.rota?E.rota.km.toLocaleString("pt-BR",{maximumFractionDigits:1})+" km":"";
+  return `<h2>Pronto! Agora é só enviar para o nosso WhatsApp</h2>
+  <p class="ajuda">Preencha seu nome e WhatsApp. O formulário vai completo para a nossa equipe, e respondemos com o orçamento, com e sem ajudante.</p>
+  <div class="resumo-env">
+    <div><span>Serviço</span><b>${({residencial:"Mudança residencial",comercial:"Mudança comercial",frete:"Frete / carreto",icamento:"Içamento"})[E.servico]||"-"}</b></div>
+    <div><span>Trajeto</span><b>${esc(E.o.bairro)}, ${esc(E.o.cidade)} → ${esc(E.d.bairro)}, ${esc(E.d.cidade)}${km?` · ${km}`:""}</b></div>
+    <div><span>Data</span><b>${textoData()}</b></div>
+    <div><span>Equipe</span><b>${textoAjudantes()}</b></div>
+    <div><span>Volume</span><b class="tnum">${c.vol.toLocaleString("pt-BR",{maximumFractionDigits:1})} m³ · ${c.viagens} ${c.viagens>1?"viagens":"viagem"}</b></div>
+  </div>
+  <div class="campos duo" style="margin-top:18px">
+    <label class="cmp">Seu nome<input type="text" id="nome" value="${esc(E.nome)}" placeholder="Como podemos te chamar?" autocomplete="name"></label>
+    <label class="cmp">WhatsApp<input type="tel" id="tel" value="${esc(E.tel)}" placeholder="(21) 9 0000-0000" inputmode="tel" autocomplete="tel"></label>
+  </div>
+  <div style="margin-top:14px">
+    <button type="button" class="chk" aria-pressed="${E.querEmail}" data-bool="querEmail">
+      <span class="bx">✓</span><div><b>📧 Também quero receber por e-mail</b><small>Opcional</small></div></button>
+  </div>
+  ${E.querEmail?`<label class="cmp" style="margin-top:14px">Seu e-mail<input type="email" id="email" value="${esc(E.email)}" placeholder="voce@email.com" autocomplete="email"></label>`:""}
+  <p class="dica" style="margin-top:14px">Usamos seus dados só para enviar este orçamento e combinar a mudança. Nada de ligação insistente.</p>
+  <p class="erro-form" id="erroForm" aria-live="polite"></p>
+  <div class="rodape-calc">
+    <button type="button" class="btn btn-fan" data-nav="-1">Voltar</button>
+    <div class="dir" style="flex:1 1 280px"><button type="button" class="btn btn-zap btn-grande" id="enviarForm">Enviar formulário para o WhatsApp e receber meu orçamento</button></div>
+  </div>`;
 }
 
 /* ---------------- motor ---------------- */
@@ -974,34 +1344,54 @@ function render(){
   const nome=ETAPAS[E.etapa];
   const telas={servico:telaServico,trajeto:telaTrajeto,acesso:telaAcesso,itens:telaItens,extras:telaExtras,data:telaData,contato:telaContato};
   el.innerHTML=telas[nome]();
-  if(nome==="trajeto") atualizaMapa();
-  document.getElementById("passoNome").textContent=(E.visto&&nome==="contato")?"Seu orçamento":NOMES[nome];
-  document.getElementById("passoCont").textContent=(E.visto&&nome==="contato")?"Concluído":`Etapa ${E.etapa+1} de ${ETAPAS.length}`;
-  document.getElementById("barra").style.width=((E.visto?ETAPAS.length:E.etapa+1)/ETAPAS.length*100)+"%";
+  if(nome==="trajeto"){
+    estadoRota=E.rota?"ok":(endCompleto(E.o)&&endCompleto(E.d)?"pendente":"incompleto");
+    desenhaMapa(); pintaRotaInfo();
+    if(!E.rota&&endCompleto(E.o)&&endCompleto(E.d)) agendaRota(300);
+  }
+  const fim=E.enviado&&nome==="contato";
+  document.getElementById("passoNome").textContent=fim?"Formulário enviado":NOMES[nome];
+  document.getElementById("passoCont").textContent=fim?"Concluído":`Etapa ${E.etapa+1} de ${ETAPAS.length}`;
+  document.getElementById("barra").style.width=((fim?ETAPAS.length:E.etapa+1)/ETAPAS.length*100)+"%";
   salvar();
 }
 function irPara(n){
   const alvo=Math.max(0,Math.min(ETAPAS.length-1,E.etapa+n));
   if(alvo===E.etapa) return;
   if(n>0) evento("CalcEtapa",{etapa:ETAPAS[alvo],indice:alvo+1});
+  if(ETAPAS[E.etapa]==="contato") E.enviado=false;
   E.etapa=alvo; render();
   const y=document.getElementById("orcamento").getBoundingClientRect().top+window.scrollY-80;
   window.scrollTo({top:y,behavior:"smooth"});
 }
+const CAMPOS_SIMPLES=["nome","tel","email","obs","oDegraus","dDegraus","oEscadaItens","dEscadaItens"];
 function lerCampos(){
-  ["nome","tel","email","obs","dataEsc"].forEach(id=>{const n=document.getElementById(id); if(n) E[id]=n.value;});
+  CAMPOS_SIMPLES.forEach(id=>{ const n=document.getElementById(id); if(n) E[id]=n.value; });
 }
 
 el.addEventListener("click",ev=>{
   const b=ev.target.closest("button"); if(!b) return;
-  if(b.dataset.campo){ lerCampos(); E[b.dataset.campo]= E[b.dataset.campo]===b.dataset.valor ? "" : b.dataset.valor;
-    if(b.dataset.campo==="oTipo"&&E.oTipo!=="apto"){E.oAndar=0;E.oElevador="";}
-    if(b.dataset.campo==="dTipo"&&E.dTipo!=="apto"){E.dAndar=0;E.dElevador="";}
+  if(b.dataset.campo){ lerCampos();
+    const c=b.dataset.campo, novo=E[c]===b.dataset.valor?"":b.dataset.valor;
+    E[c]=novo;
+    const p=c[0];
+    if(c===p+"Tipo"){ E[p+"Andar"]=0; E[p+"Elevador"]=""; E[p+"Cabe"]=""; E[p+"EscadaItens"]=""; if(novo!=="sobrado") E[p+"Degraus"]=""; }
+    if(c===p+"Elevador"&&novo==="nao"){ E[p+"Cabe"]=""; E[p+"EscadaItens"]=""; }
+    if(c===p+"Cabe"&&novo!=="nao") E[p+"EscadaItens"]="";
     render(); return; }
-  if(b.dataset.ajud){ E.ajudantes=+b.dataset.ajud; render(); return; }
+  if(b.dataset.ajud!==undefined){ E.ajudantes=+b.dataset.ajud; render(); return; }
   if(b.dataset.extra){ const i=E.extras.indexOf(b.dataset.extra);
     i>-1?E.extras.splice(i,1):E.extras.push(b.dataset.extra); render(); return; }
-  if(b.dataset.bool){ lerCampos(); E[b.dataset.bool]=!E[b.dataset.bool]; render(); return; }
+  if(b.dataset.bool){ lerCampos(); E[b.dataset.bool]=!E[b.dataset.bool];
+    if(b.dataset.bool==="endOk"){ b.setAttribute("aria-pressed",E.endOk); salvar(); atualizaAvancar(); return; }
+    if(b.dataset.bool==="semData"&&E.semData){ E.dataEsc=""; E.turno=""; }
+    render(); return; }
+  if(b.dataset.acao==="rota"){ agendaRota(0); return; }
+  if(b.dataset.mes){ mesVis=[mesVis[0],mesVis[1]+(+b.dataset.mes)];
+    const d=new Date(mesVis[0],mesVis[1],1); mesVis=[d.getFullYear(),d.getMonth()]; pintaAgenda(); return; }
+  if(b.dataset.dia){ E.dataEsc=b.dataset.dia; if(E.turno&&!turnoLivre(E.dataEsc,E.turno)) E.turno="";
+    salvar(); pintaAgenda(); return; }
+  if(b.dataset.turno){ E.turno=b.dataset.turno; salvar(); pintaAgenda(); return; }
   if(b.dataset.preset){ const p=b.dataset.preset;
     if(E.porte===p){E.porte="";E.itens={};} else {E.porte=p;E.itens=Object.assign({},PRESETS[p]);}
     evento("CalcPreset",{porte:p}); render(); return; }
@@ -1016,55 +1406,58 @@ el.addEventListener("click",ev=>{
     if(n && !cont){ cont=document.createElement("span"); cont.className="cont"; sum.appendChild(cont); }
     if(cont){ cont.textContent=n; cont.hidden=!n; }
     const vol=volumeTotal(), tot=Object.values(E.itens).reduce((a,x)=>a+x,0);
-    const viagens=Math.max(1,Math.ceil(vol/CONFIG.caminhao.m3PorViagem));
     const rv=document.getElementById("resumoVol");
-    if(rv) rv.innerHTML=resumoVolHTML(vol,tot,viagens);
-    const av=el.querySelector('[data-nav="1"]'); if(av) av.disabled=tot===0;
-    E.porte=""; salvar(); return; }
-  if(b.dataset.nav){ lerCampos();
-    if(b.dataset.nav==="pular"){ irPara(1); return; }
-    irPara(+b.dataset.nav); return; }
-  if(b.id==="verPreco"){ lerCampos();
+    if(rv) rv.innerHTML=resumoVolHTML(vol,tot,Math.max(1,Math.ceil(vol/CONFIG.caminhao.m3PorViagem)));
+    E.porte=""; salvar(); atualizaAvancar(); return; }
+  if(b.dataset.nav){ lerCampos(); irPara(+b.dataset.nav); return; }
+  if(b.id==="enviarForm"){ lerCampos();
+    const erro=document.getElementById("erroForm");
     const nomeN=document.getElementById("nome"), telN=document.getElementById("tel");
-    if(!E.nome.trim()){ nomeN.focus(); nomeN.style.borderColor="var(--accent)"; return; }
-    if(E.tel.replace(/\D/g,"").length<10){ telN.focus(); telN.style.borderColor="var(--accent)"; return; }
-    const c=calcular(); E.visto=true;
-    evento("Lead",{valor:c.minimo,volume:c.vol,servico:E.servico,viagens:c.viagens});
+    if(!E.nome.trim()){ nomeN.focus(); nomeN.style.borderColor="var(--accent)"; erro.textContent="Preencha o seu nome."; return; }
+    if(E.tel.replace(/\D/g,"").length<10){ telN.focus(); telN.style.borderColor="var(--accent)"; erro.textContent="Preencha o WhatsApp com DDD, por exemplo (21) 99999-9999."; return; }
+    const url=linkZap(), c=calcular();
+    evento("Lead",{volume:c.vol,servico:E.servico,viagens:c.viagens,ajudantes:E.ajudantes});
     try{ if(window.fbq) window.fbq("track","Lead",{value:c.minimo,currency:"BRL"}); }catch(e){}
-    render(); return; }
-  if(b.id==="copiar"){ const txt=montarResumo(calcular());
-    const ok=()=>{ b.textContent="Resumo copiado"; setTimeout(()=>b.textContent="Copiar resumo",2200); };
+    const w=window.open(url,"_blank");
+    E.enviado=true; render();
+    if(!w) location.href=url;
+    return; }
+  if(b.id==="novoOrc"){ E=NOVO(); try{ localStorage.removeItem("pita_orcamento_v2"); }catch(e){} render(); return; }
+  if(b.id==="copiar"){ const txt=montarResumo();
+    const ok=()=>{ b.textContent="Formulário copiado"; setTimeout(()=>b.textContent="Copiar o formulário",2200); };
     try{ navigator.clipboard.writeText(txt).then(ok).catch(()=>caiuFora(txt,b)); }catch(e){ caiuFora(txt,b); } return; }
 });
 function caiuFora(txt,b){
   const t=document.createElement("textarea"); t.value=txt; t.style.position="fixed"; t.style.opacity="0";
   document.body.appendChild(t); t.select();
-  try{ document.execCommand("copy"); b.textContent="Resumo copiado"; setTimeout(()=>b.textContent="Copiar resumo",2200); }
+  try{ document.execCommand("copy"); b.textContent="Formulário copiado"; setTimeout(()=>b.textContent="Copiar o formulário",2200); }
   catch(e){ b.textContent="Selecione e copie"; }
   t.remove();
 }
 el.addEventListener("change",ev=>{
   const n=ev.target;
-  if(n.dataset.num){ E[n.dataset.num]=+n.value; render(); return; }
-  if(n.id==="dataEsc"){ E.dataEsc=n.value; render(); return; }
-  if(n.id==="origemCidade"||n.id==="destinoCidade"){
-    const lado=n.id==="origemCidade"?"origem":"destino";
-    E[lado+"Cidade"]=n.value; E[lado+"Bairro"]="";
-    const alvo=document.getElementById(lado+"Bairro");
-    alvo.outerHTML=selectBairro(lado+"Bairro",n.value,"");
-    atualizaMapa(); travaTrajeto(); salvar(); return;
-  }
-  if(n.id==="origemBairro"||n.id==="destinoBairro"){
-    E[n.id]=n.value; atualizaMapa(); travaTrajeto(); salvar(); return;
-  }
+  if(n.dataset.num){ E[n.dataset.num]=+n.value; if(+n.value===0){ const p=n.dataset.num[0]; E[p+"Elevador"]=""; E[p+"Cabe"]=""; E[p+"EscadaItens"]=""; } render(); }
 });
-function travaTrajeto(){
-  const av=el.querySelector('[data-nav="1"]');
-  if(av) av.disabled=!(E.origemCidade&&E.origemBairro&&E.destinoCidade&&E.destinoBairro);
-}
 el.addEventListener("input",ev=>{
-  if(!ev.target.id) return;
-  E[ev.target.id]=ev.target.value; ev.target.style.borderColor=""; salvar();
+  const n=ev.target;
+  n.style.borderColor="";
+  const erro=document.getElementById("erroForm"); if(erro) erro.textContent="";
+  if(n.dataset.end){
+    const [p,c]=n.dataset.end.split(".");
+    if(c==="cep"){
+      const dg=n.value.replace(/\D/g,"").slice(0,8);
+      const fm=dg.length>5?dg.slice(0,5)+"-"+dg.slice(5):dg;
+      if(n.value!==fm) n.value=fm;
+      E[p].cep=fm; salvar();
+      if(dg.length===8) buscaCep(p,dg);
+      return;
+    }
+    E[p][c]=n.value;
+    if(c==="cidade") atualizaBairros(p);
+    if(c!=="compl"){ E[p].lat=null; E[p].lon=null; E[p].nivel=null; const m=document.getElementById(p+"Msg"); if(m){ m.textContent=""; m.className="end-msg"; } invalidaRota(); agendaRota(); }
+    salvar(); return;
+  }
+  if(CAMPOS_SIMPLES.includes(n.id)){ E[n.id]=n.value; salvar(); atualizaAvancar(); }
 });
 
 ["zapTopo","zapHero","zapFim","zapFlut"].forEach(id=>{
@@ -1074,7 +1467,13 @@ el.addEventListener("input",ev=>{
 });
 document.getElementById("zapTexto").textContent=CONFIG.marca.whatsappExibicao;
 document.getElementById("ano").textContent=new Date().getFullYear();
-montaTarja(); montaVideo(); render();
+// esconde o botão flutuante do WhatsApp enquanto o formulário está na tela, para não cobrir os botões
+try{
+  const flut=document.getElementById("zapFlut"), calcBox=document.querySelector(".calc");
+  new IntersectionObserver(es=>es.forEach(e=>flut.classList.toggle("escondido",e.isIntersecting)),{threshold:0.05}).observe(calcBox);
+}catch(e){}
+montaTarja(); montaVideo(); render(); carregaAgenda();
+
 </script>
 
 </body>
