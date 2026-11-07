@@ -1524,7 +1524,7 @@ try{
       <a class="btn btn-fan" data-saida="zap" href="https://wa.me/${CONFIG.marca.whatsapp}?text=${encodeURIComponent("Olá! Vim pelo site da "+CONFIG.marca.nome+" e quero um orçamento de mudança.")}" target="_blank" rel="noopener">Prefiro falar no WhatsApp</a></div>`;
   }
   function abre(motivo){
-    if(aberto||jaMostrou()||E.enviado||Date.now()-inicio<6000) return;
+    if(aberto||jaMostrou()||E.enviado||Date.now()-inicio<3000) return;
     aberto=true; marca();
     const ultimoFoco=document.activeElement;
     const w=document.createElement("div");
