@@ -304,6 +304,26 @@ input[type=number]{width:100%;font:inherit;font-size:15.5px;color:var(--ink);bac
 .chk{text-align:left}
 .zap-flut{transition:opacity .2s,transform .2s}
 .zap-flut.escondido{opacity:0;transform:translateY(12px);pointer-events:none}
+
+/* ---------- aviso de saída ---------- */
+.saida{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));background:rgba(5,5,5,.72);backdrop-filter:blur(3px);animation:saidaFundo .2s ease}
+.saida-box{position:relative;width:min(460px,100%);background:var(--panel);color:var(--ink);border:1px solid var(--line);border-top:4px solid var(--accent);border-radius:var(--radius-lg);padding:28px 24px 22px;box-shadow:0 24px 60px rgba(0,0,0,.55);animation:saidaSobe .25s ease}
+.saida-box h2{font-size:clamp(22px,4.6vw,27px);line-height:1.15;margin:6px 0 10px;text-wrap:balance}
+.saida-box p{color:var(--ink-muted);font-size:15px;line-height:1.5}
+.saida-box .rotulo{color:var(--accent)}
+.saida-lista{list-style:none;padding:0;margin:16px 0 4px;display:grid;gap:8px;font-size:14.5px}
+.saida-lista li{display:flex;gap:10px;align-items:flex-start}
+.saida-lista li::before{content:"✓";flex:0 0 auto;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:800;background:var(--st-concluido);color:#07140F;margin-top:1px}
+.saida-prog{height:8px;border-radius:999px;background:var(--panel-2);overflow:hidden;margin:14px 0 6px}
+.saida-prog i{display:block;height:100%;background:linear-gradient(90deg,var(--hero-1),var(--hero-2));border-radius:999px}
+.saida-bt{display:grid;gap:10px;margin-top:20px}
+.saida-bt .btn{width:100%;justify-content:center;text-align:center}
+.saida-fechar{position:absolute;top:10px;right:10px;width:40px;height:40px;border-radius:50%;border:0;background:transparent;color:var(--ink-muted);font-size:24px;line-height:1;cursor:pointer}
+.saida-fechar:hover{color:var(--ink);background:var(--panel-2)}
+.saida-nao{background:none;border:0;color:var(--ink-muted);font:inherit;font-size:13.5px;text-decoration:underline;cursor:pointer;padding:6px}
+@keyframes saidaFundo{from{opacity:0}}
+@keyframes saidaSobe{from{opacity:0;transform:translateY(16px) scale(.98)}}
+@media (prefers-reduced-motion:reduce){.saida,.saida-box{animation:none}}
 </style>
 </head>
 <body style="margin:0">
@@ -1473,6 +1493,78 @@ try{
   const flut=document.getElementById("zapFlut"), calcBox=document.querySelector(".calc");
   new IntersectionObserver(es=>es.forEach(e=>flut.classList.toggle("escondido",e.isIntersecting)),{threshold:0.05}).observe(calcBox);
 }catch(e){}
+// ---------- aviso de saída: aparece uma vez por visita quando a pessoa tenta sair ----------
+(function(){
+  const CHAVE="pita_saida_mostrado", inicio=Date.now();
+  let aberto=false;
+  const jaMostrou=()=>{ try{ return sessionStorage.getItem(CHAVE)==="1"; }catch(e){ return aberto; } };
+  const marca=()=>{ try{ sessionStorage.setItem(CHAVE,"1"); }catch(e){} };
+  function conteudo(){
+    const etapa=E.etapa, comecou=etapa>0||!!E.servico, faltam=ETAPAS.length-etapa;
+    if(comecou){
+      const pct=Math.round(etapa/ETAPAS.length*100);
+      return `<span class="rotulo">Seu orçamento ficou salvo</span>
+        <h2 id="saidaTit">${faltam<=3?`Falta${faltam>1?"m":""} só ${faltam} ${faltam>1?"etapas":"etapa"} para você receber o valor`:"Você já começou. Termine em poucos minutos e receba o valor"}</h2>
+        <p>Tudo o que você preencheu continua aqui. Termine agora e receba o orçamento no seu WhatsApp, com e sem ajudante.</p>
+        <div class="saida-prog" aria-hidden="true"><i style="width:${pct}%"></i></div>
+        <p style="font-size:13px">${pct}% concluído · próxima etapa: ${NOMES[ETAPAS[etapa]].toLowerCase()}</p>
+        <div class="saida-bt"><button type="button" class="btn btn-pri" data-saida="voltar">Continuar de onde parei</button>
+        <button type="button" class="saida-nao" data-saida="fechar">Agora não</button></div>`;
+    }
+    return `<span class="rotulo">Antes de sair</span>
+      <h2 id="saidaTit">Saiba quanto custa a sua mudança sem precisar ligar</h2>
+      <p>Monte a lista dos seus móveis em poucos minutos e receba o orçamento direto no seu WhatsApp.</p>
+      <ul class="saida-lista">
+        <li>Você só paga depois da mudança feita. Sem sinal e sem entrada</li>
+        <li>Atendemos de domingo a domingo, inclusive feriados</li>
+        <li>São Gonçalo, Niterói e Maricá</li>
+      </ul>
+      <div class="saida-bt"><button type="button" class="btn btn-pri" data-saida="voltar">Quero meu orçamento</button>
+      <a class="btn btn-fan" data-saida="zap" href="https://wa.me/${CONFIG.marca.whatsapp}?text=${encodeURIComponent("Olá! Vim pelo site da "+CONFIG.marca.nome+" e quero um orçamento de mudança.")}" target="_blank" rel="noopener">Prefiro falar no WhatsApp</a></div>`;
+  }
+  function abre(motivo){
+    if(aberto||jaMostrou()||E.enviado||Date.now()-inicio<6000) return;
+    aberto=true; marca();
+    const ultimoFoco=document.activeElement;
+    const w=document.createElement("div");
+    w.className="saida"; w.setAttribute("role","dialog"); w.setAttribute("aria-modal","true"); w.setAttribute("aria-labelledby","saidaTit");
+    w.innerHTML=`<div class="saida-box"><button type="button" class="saida-fechar" data-saida="fechar" aria-label="Fechar">×</button>${conteudo()}</div>`;
+    document.body.appendChild(w);
+    evento("SaidaAviso",{motivo,etapa:E.etapa+1});
+    const fecha=()=>{ w.remove(); aberto=false; document.removeEventListener("keydown",tecla); try{ ultimoFoco&&ultimoFoco.focus(); }catch(e){} };
+    const tecla=ev=>{ if(ev.key==="Escape") fecha(); };
+    document.addEventListener("keydown",tecla);
+    w.addEventListener("click",ev=>{
+      const a=ev.target.closest("[data-saida]");
+      if(ev.target===w||(a&&a.dataset.saida==="fechar")){ fecha(); return; }
+      if(a&&a.dataset.saida==="voltar"){ evento("SaidaVoltou",{etapa:E.etapa+1}); fecha();
+        const y=document.getElementById("orcamento").getBoundingClientRect().top+window.scrollY-80;
+        window.scrollTo({top:y,behavior:"smooth"}); return; }
+      if(a&&a.dataset.saida==="zap"){ evento("SaidaWhatsApp",{}); fecha(); }
+    });
+    setTimeout(()=>{ const b=w.querySelector('[data-saida="voltar"]'); if(b) b.focus(); },50);
+  }
+  // computador: o mouse sai pela parte de cima da janela (rumo às abas ou ao X)
+  document.addEventListener("mouseout",ev=>{ if(!ev.relatedTarget&&ev.clientY<=8) abre("mouse"); });
+  // celular: rolagem rápida de volta para o topo, depois de já ter descido na página
+  let ultY=window.scrollY, ultT=Date.now(), desceu=false;
+  window.addEventListener("scroll",()=>{
+    const y=window.scrollY, t=Date.now();
+    if(y>900) desceu=true;
+    const vel=(ultY-y)/Math.max(1,t-ultT);
+    if(desceu&&vel>2.2&&y<600&&matchMedia("(pointer:coarse)").matches) abre("rolagem");
+    ultY=y; ultT=t;
+  },{passive:true});
+  // celular e computador: a pessoa troca de aba ou de app e depois volta
+  // ignora quando a própria página mandou a pessoa para fora (Google Maps, WhatsApp)
+  let linkExterno=0;
+  document.addEventListener("click",ev=>{ const a=ev.target.closest('a[target="_blank"]'); if(a) linkExterno=Date.now(); },true);
+  let saiuEm=0;
+  document.addEventListener("visibilitychange",()=>{
+    if(document.hidden){ saiuEm=Date.now()-linkExterno<3000?0:Date.now(); return; }
+    if(saiuEm&&Date.now()-saiuEm>4000&&E.etapa>0&&!E.enviado) abre("voltou");
+  });
+})();
 montaTarja(); montaVideo(); render(); carregaAgenda();
 
 </script>
